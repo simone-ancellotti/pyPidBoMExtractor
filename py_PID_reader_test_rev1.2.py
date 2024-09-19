@@ -1,0 +1,496 @@
+import ezdxf
+from ezdxf.math import BoundingBox
+from ezdxf.math import BoundingBox, Vec3
+import numpy as np 
+import re
+
+listTagBlockNames = ('Tag_block','Ball_Tag',
+                     'STICKER Moving Machine', 'STICKER Equipment Name',
+                     'Tag_Instrument')
+
+def normalize(v):
+    v=np.array(v)
+    norm = np.linalg.norm(v)
+    if norm == 0: return v
+    return v / norm
+
+def print_block_entities(block_def):
+    """Print the details of each entity in a block definition."""
+    for entity in block_def:
+        print(f"Entity Type: {entity.dxftype()}")
+        for attr in dir(entity):
+            if not attr.startswith('_'):
+                try:
+                    value = getattr(entity, attr)
+                    if value:
+                        print(f"  {attr}: {value}")
+                except Exception as e:
+                    print(f"  {attr}: Error retrieving attribute - {e}")
+        print("\n")
+
+def _old__extract_blocks_with_attributes_and_dimensions(dwg_file_path):
+    # Load the DWG file
+    dwg = ezdxf.readfile(dwg_file_path)
+    msp = dwg.modelspace()
+
+    components = []
+
+    # Iterate over all block references (INSERT entities) in the modelspace
+    for entity in msp.query('INSERT'):
+        block_name = entity.dxf.name
+        insert_point = entity.dxf.insert
+
+        # Extract attributes associated with the block
+        attributes = {}
+        for attrib in entity.attribs:
+            attributes[attrib.dxf.tag] = attrib.dxf.text
+
+        # Check if the block definition contains a circle
+        block_def = dwg.blocks.get(block_name)
+        contains_circle = any(e.dxftype() == 'CIRCLE' for e in block_def)
+
+        # Calculate the dimensions of the block
+        dimensions = get_block_dimensions(block_def)
+
+        component = {
+            "block_name": block_name,
+            "insert_point": (insert_point.x, insert_point.y),
+            "attributes": attributes,
+            "contains_circle": contains_circle,
+            "dimensions": dimensions,  # Adding dimensions to the component
+            "block_def": block_def
+        }
+        components.append(component)
+
+    return components
+
+def extract_blocks_with_attributes_and_dimensions(dwg_file_path):
+    # Load the DWG file
+    dwg = ezdxf.readfile(dwg_file_path)
+    msp = dwg.modelspace()
+
+    components = []
+
+    # Iterate over all block references (INSERT entities) in the modelspace
+    for entity in msp.query('INSERT'):
+        block_name = entity.dxf.name
+        insert_point = entity.dxf.insert
+
+        # Extract attributes associated with the block
+        attributes = {}
+        for attrib in entity.attribs:
+            attributes[attrib.dxf.tag] = attrib.dxf.text
+
+        # Get the scaling factors
+        scale_x = getattr(entity.dxf, 'xscale', 1.0)  # Default to 1.0 if not found
+        scale_y = getattr(entity.dxf, 'yscale', 1.0)  # Default to 1.0 if not found
+        scale_z = getattr(entity.dxf, 'zscale', 1.0)  # Default to 1.0 if not found
+
+        # Check if the block definition contains a circle
+        block_def = dwg.blocks.get(block_name)
+        contains_circle = any(e.dxftype() == 'CIRCLE' for e in block_def)
+
+        # Print the block entities for debugging
+        #print(f"Block: {block_name}")
+        #print_block_entities(block_def)
+        
+        # Calculate the final bounding box dimensions of the block
+        dimensions = get_block_final_bounding_box(block_def, scale_x, scale_y, scale_z)
+        
+        if dimensions is None:
+            # Assign default dimensions if no geometric entities were found
+            dimensions = {"width": 10 * scale_x, "height": 10 * scale_y}
+
+        component = {
+            "block_name": block_name,
+            "insert_point": (insert_point.x, insert_point.y),
+            "attributes": attributes,
+            "contains_circle": contains_circle,
+            "dimensions": dimensions,  # Adding dimensions to the component
+            "block_def" : block_def
+        }
+        components.append(component)
+
+    return components
+
+def get_block_dimensions(block_def):
+    """Calculate the width and height of a block using its bounding box."""
+    bounding_box = BoundingBox()
+
+    for entity in block_def:
+        # Handle different entity types for bounding box calculation
+        if entity.dxftype() == 'LINE':
+            start_point = entity.dxf.start
+            end_point = entity.dxf.end
+            bounding_box.extend([start_point, end_point])
+
+        elif entity.dxftype() == 'CIRCLE':
+            center = entity.dxf.center
+            radius = entity.dxf.radius
+            bounding_box.extend([
+                (center.x - radius, center.y - radius, center.z),
+                (center.x + radius, center.y + radius, center.z)
+            ])
+
+        elif entity.dxftype() == 'ARC':
+            center = entity.dxf.center
+            radius = entity.dxf.radius
+            bounding_box.extend([
+                (center.x - radius, center.y - radius, center.z),
+                (center.x + radius, center.y + radius, center.z)
+            ])
+
+        elif entity.dxftype() == 'LWPOLYLINE' or entity.dxftype() == 'POLYLINE':
+            for point in entity.get_points():
+                bounding_box.extend([point[:3]])  # Assuming point has (x, y, z)
+        
+        # Handle TEXT and MTEXT entities for dimension calculation
+        elif entity.dxftype() == 'TEXT':
+            insert_point = entity.dxf.insert
+            height = entity.dxf.height
+            width_factor = entity.dxf.get("width_factor", 1.0)
+            text_width = len(entity.text) * height * width_factor
+            bounding_box.extend([
+                (insert_point.x, insert_point.y, insert_point.z),
+                (insert_point.x + text_width, insert_point.y + height, insert_point.z)
+            ])
+        
+        elif entity.dxftype() == 'MTEXT':
+            insert_point = entity.dxf.insert
+            width = entity.dxf.get("width", 0)
+            char_height = entity.dxf.char_height  # Use char_height directly for MTEXT
+            bounding_box.extend([
+                (insert_point.x, insert_point.y, insert_point.z),
+                (insert_point.x + width, insert_point.y + char_height, insert_point.z)
+            ])
+        elif entity.dxftype() == 'ATTDEF':
+        # ATTDEF entities do not have dimensions; they are just attribute definitions
+            pass
+        # Add other entity types if needed, like SPLINE, ELLIPSE, etc.
+
+    if not bounding_box.has_data:
+        # Return default dimensions if no geometric entities were found
+        return {"width": 10, "height": 10}
+
+    # Extract the minimum and maximum points from the bounding box
+    min_point, max_point = bounding_box.extmin, bounding_box.extmax
+
+    width = max_point.x - min_point.x
+    height = max_point.y - min_point.y
+
+    return {"width": width, "height": height}
+
+def get_block_final_bounding_box(block_def, scale_x=1.0, scale_y=1.0, scale_z=1.0):
+    """Calculate the final bounding box of a block, applying scaling transformations."""
+    bounding_box = BoundingBox()
+
+    for entity in block_def:
+        # Handle different entity types for bounding box calculation
+        if entity.dxftype() == 'LINE':
+            start_point = entity.dxf.start
+            end_point = entity.dxf.end
+            bounding_box.extend([start_point, end_point])
+
+        elif entity.dxftype() == 'CIRCLE':
+            center = entity.dxf.center
+            radius = entity.dxf.radius
+            bounding_box.extend([
+                (center.x - radius, center.y - radius, center.z),
+                (center.x + radius, center.y + radius, center.z)
+            ])
+
+        elif entity.dxftype() == 'ARC':
+            center = entity.dxf.center
+            radius = entity.dxf.radius
+            bounding_box.extend([
+                (center.x - radius, center.y - radius, center.z),
+                (center.x + radius, center.y + radius, center.z)
+            ])
+
+        elif entity.dxftype() == 'LWPOLYLINE' or entity.dxftype() == 'POLYLINE':
+            for point in entity.get_points():
+                bounding_box.extend([point[:3]])  # Assuming point has (x, y, z)
+
+        elif entity.dxftype() == 'TEXT':
+            insert_point = entity.dxf.insert
+            height = entity.dxf.height
+            width_factor = entity.dxf.get("width_factor", 1.0)
+            text_width = len(entity.text) * height * width_factor
+            bounding_box.extend([
+                (insert_point.x, insert_point.y, insert_point.z),
+                (insert_point.x + text_width, insert_point.y + height, insert_point.z)
+            ])
+
+        elif entity.dxftype() == 'MTEXT':
+            insert_point = entity.dxf.insert
+            width = entity.dxf.get("width", 0)
+            char_height = entity.dxf.char_height  # Use char_height directly for MTEXT
+            bounding_box.extend([
+                (insert_point.x, insert_point.y, insert_point.z),
+                (insert_point.x + width, insert_point.y + char_height, insert_point.z)
+            ])
+
+        elif entity.dxftype() == 'ATTDEF':
+            # ATTDEF entities do not have dimensions; they are just attribute definitions
+            pass
+
+    if not bounding_box.has_data:
+        return None  # No entities in the block or unable to calculate
+
+    # Extract the minimum and maximum points from the bounding_box
+    min_point, max_point = bounding_box.extmin, bounding_box.extmax
+
+    # Create new points with scaling applied
+    min_point_scaled = Vec3(min_point.x * scale_x, min_point.y * scale_y, min_point.z * scale_z)
+    max_point_scaled = Vec3(max_point.x * scale_x, max_point.y * scale_y, max_point.z * scale_z)
+
+    width = max_point_scaled.x - min_point_scaled.x
+    height = max_point_scaled.y - min_point_scaled.y
+
+    return {"width": width, "height": height}
+
+
+
+
+def isTagBlock(block):
+    block_name = block['block_name']
+    if block_name[:2] == "*U" and block_name[2:].isdigit():
+        return True
+    if block_name in listTagBlockNames:
+        return True
+    return False
+
+def getCaracteristicDimensionBlock(block):
+    dimensionsComp = block['dimensions']
+    return max(dimensionsComp['width'],dimensionsComp['height'])
+
+def getCriticalDistance(dim1,dim2):
+    return dim1/2.0 + dim2/2.0 + max(dim1,dim2) * 0.5
+
+
+def findBlocksNearBlock(block,components ):
+    filtered_blocks = []
+    distances_with_block0 = []
+    positionBlock0 = np.array(block['insert_point'])
+    mainDimBlock0  = getCaracteristicDimensionBlock(block)
+    i=-1
+    for component in components:
+        i+=1
+        if block['block_def'] != component['block_def']:
+            positionComponent1 = np.array(component['insert_point'])
+            mainDim1 = getCaracteristicDimensionBlock(component)
+            
+            criticalDistance = getCriticalDistance(mainDimBlock0,mainDim1)
+            distance = np.linalg.norm(positionBlock0 - positionComponent1)
+            if distance <= criticalDistance:
+                filtered_blocks.append(component)
+                distances_with_block0.append(distance)
+    
+    # sort by distance
+    sorted_filtered_blocks, sorted_distances = sort_blocks_by_distance(filtered_blocks, distances_with_block0)
+
+    return sorted_filtered_blocks, sorted_distances
+
+def sort_blocks_by_distance(filtered_blocks, distances_with_block0):
+    """
+    Sorts the filtered blocks based on their distances from the reference block.
+
+    Args:
+        filtered_blocks (list): List of blocks to be sorted.
+        distances_with_block0 (list): Corresponding distances of the blocks.
+
+    Returns:
+        sorted_filtered_blocks (list): Blocks sorted by distance.
+        sorted_distances (list): Distances sorted in ascending order.
+    """
+    # Combine filtered_blocks and distances_with_block0 into a list of tuples
+    blocks_with_distances = list(zip(filtered_blocks, distances_with_block0))
+
+    # Sort the list of tuples based on the second element (distance)
+    blocks_with_distances.sort(key=lambda x: x[1])
+
+    # Extract the sorted filtered_blocks and distances back
+    sorted_filtered_blocks = [block for block, _ in blocks_with_distances]
+    sorted_distances = [distance for _, distance in blocks_with_distances]
+
+    return sorted_filtered_blocks, sorted_distances
+      
+def getTypeFromBlock(block):
+    attributes = block['attributes']
+    
+    typeTag = None
+    if 'TYPE' in attributes.keys():
+        typeTag = attributes['TYPE']
+    else: 
+        typeTag = attributes.get('DESCRIPTION')
+    return typeTag
+
+def findTypeBlockFromTag(block,components):
+    #blocksValveAndMachine = [comp for comp in components ]
+    # attributes = block['attributes']
+    
+    # typeTag = ''
+    # if 'TYPE' in attributes.items():
+    #     typeTag = attributes['TYPE']
+    typeTag = getTypeFromBlock(block)
+    distance = np.nan
+    
+    if typeTag == '' or typeTag==None:
+        # if type not found in block then look for it in the neightbours
+        
+        # here the potential options sorted by their distances to block under analysis
+        filtered_blocks,distances_with_block0 = findBlocksNearBlock(block,components )
+        if len(filtered_blocks)>0:
+            # select the nearest block
+            i=-1
+            for comp in filtered_blocks:
+                i+=1
+                typeTag_i = getTypeFromBlock(comp)
+                if typeTag_i and isinstance(typeTag_i, str) and not(isTagBlock(comp)):
+                    return typeTag_i,distances_with_block0[i]
+            
+            # if not found type propose to use the name of the block
+            i=-1
+            for comp in filtered_blocks:
+                i+=1
+                typeTag_i = comp['block_name']
+                if len(typeTag_i)>1 and isinstance(typeTag_i, str) and not(isTagBlock(comp)):
+                    return typeTag_i,distances_with_block0[i]
+                
+    return typeTag,distance
+
+
+def parse_tag_code(tag_code):
+    # Updated regex to capture an optional second alphabetic part at the end
+    match = re.match(r"([A-Za-z]+)(\d+)([A-Za-z]*)$", tag_code)
+    if match:
+        target_object_type = match.group(1)  # The first alphabetic part (HV or FXS)
+        target_object_loop_number = int(match.group(2))  # The numeric part (201)
+        target_object_type_2nd = match.group(3)  # The optional second alphabetic part (X)
+        
+        return target_object_type, target_object_loop_number, target_object_type_2nd
+    else:
+        raise ValueError(f"Invalid tag code format: {tag_code}")
+        
+def getTagCode(block):
+    targetObjectType = ''
+    targetObjectLoopNumber = ''
+    
+    
+    if isTagBlock(block):
+        attributes = block['attributes']
+        
+        # Define the search keys
+        key_TargetObjectType = '#(TargetObject.Type)'
+        key_TargetObjectLoopNumber = '#(TargetObject.LoopNumber)'
+        key_TargetObjectTag = '#(TargetObject.Tag)'
+        
+        # Create a case-insensitive dictionary for attribute keys
+        attributes_lower = {key.lower(): value for key, value in attributes.items()}
+        
+        # Convert search keys to lowercase
+        key_TargetObjectType_lower = key_TargetObjectType.lower()
+        key_TargetObjectLoopNumber_lower = key_TargetObjectLoopNumber.lower()
+        key_TargetObjectTag_lower = key_TargetObjectTag.lower()
+
+        # Attempt to fetch both values in a single step, avoiding redundant lookups
+        targetObjectType = attributes_lower.get(key_TargetObjectType_lower)
+        targetObjectLoopNumber = attributes_lower.get(key_TargetObjectLoopNumber_lower)
+        targetObjectType2nd = ''
+        if targetObjectType and targetObjectLoopNumber:
+            # Both were found, return them
+            return targetObjectType, targetObjectLoopNumber,targetObjectType2nd
+        else:
+            # Try to find the tag instead
+            targetObjectTag = attributes_lower.get(key_TargetObjectTag_lower)
+            if targetObjectTag:
+                # Parse the tag to get type and loop number
+                return parse_tag_code(targetObjectTag)
+            else:
+                raise ValueError(f"The provided block '{block['block_name']}' is missing TagObjects.")
+    
+    else:
+        raise ValueError("The provided block is not a TagBlock.")
+
+def generate_bom(components):
+    
+    tagBlocks = [c for c in components if isTagBlock(c)]
+    bom = {}
+    i=-1
+    for component in tagBlocks:
+        i+=1
+        number = i+1
+        block_name = component['block_name']
+        attributes = component['attributes']
+        #contains_circle = component['contains_circle']
+        
+        targetObjectType, targetObjectLoopNumber, targetObjectType2nd = getTagCode(component)     
+        typeTag,distance = findTypeBlockFromTag(component,components)
+        description = attributes.get('DESCRIPTION')
+        
+        bom.update( {number:{
+                "count":number,
+                'targetObjectType':targetObjectType,
+                'targetObjectLoopNumber':targetObjectLoopNumber,
+                'targetObjectType2nd':targetObjectType2nd,
+                'TYPE':typeTag,
+                'description':description
+                }})
+        # # If block has a 'NUMBER' attribute, include it in the BOM
+        # number = attributes.get('NUMBER', None)
+        # if number:
+        #     if number in bom:
+        #         bom[number]['count'] += 1
+        #     else:
+        #         bom[number] = {"count": 1, "contains_circle": contains_circle, "dimensions": component['dimensions']}
+        # else:
+        #     print(f"Block '{block_name}' does not have a 'NUMBER' attribute.")
+
+    return bom
+
+# def print_bom(bom):
+#     # Print the BOM with formatting and sorting by component number
+#     print("\nGenerated BOM with Dimensions:\n")
+#     print(f"{'Component':<12}{'Count':<8}{'Contains Circle':<20}{'Width':<10}{'Height':<10}")
+#     print("-" * 60)
+#     for component, info in sorted(bom.items()):
+#         dimensions = info.get('dimensions', {})
+#         width = dimensions.get('width', 'N/A')
+#         height = dimensions.get('height', 'N/A')
+#         print(f"{component:<12}{info['count']:<8}{str(info['contains_circle']):<20}{width:<10}{height:<10}")
+        
+
+def print_bom(bom):
+    print("\nGenerated BOM:\n")
+    print(f"{'#':<3}|{'L':<4}|{'N':<5}|{'D':<4}|{'P&ID TAG':<10}|{'Type':<30}|{'Description':<30}")
+    print("-" * 40)
+    for it in bom.keys():
+        component = bom[it]
+        L = component['targetObjectType']
+        N = component['targetObjectLoopNumber']
+        D = component['targetObjectType2nd']
+        pid_TAG = str(L)+str(N)+str(D)
+        comp_type = component['TYPE']
+        description=component['description']
+        if description == None: description=''
+        print(f"{it:<3}|{L:<4}|{N:<5}|{D:<4}|{pid_TAG:<10}|{comp_type:<30}|{description:<30}")
+    
+if __name__ == "__main__":
+    dwg_file = r"P&ID_simple.dxf"  # Corrected the file path
+    
+    components = extract_blocks_with_attributes_and_dimensions(dwg_file)
+    
+
+    # Print the formatted BOM with dimensions
+
+    tagBlocks = [c for c in components if isTagBlock(c)]
+    bom = generate_bom(components)
+    print_bom(bom)
+        
+    
+    # u5 = tagBlocks[0]
+    # findBlocksNearBlock(u5,components )
+    
+#	Q. ty	L	N	D	P&ID TAG	Original P&ID tag	Fluid	Unit	DI	DO	AI	AO	joint	Skid	Type	Description
+    
+    

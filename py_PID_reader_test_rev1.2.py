@@ -207,9 +207,15 @@ def get_block_final_bounding_box(block_def, scale_x=1.0, scale_y=1.0, scale_z=1.
                 (center.x + radius, center.y + radius, center.z)
             ])
 
-        elif entity.dxftype() == 'LWPOLYLINE' or entity.dxftype() == 'POLYLINE':
+        elif entity.dxftype() == 'LWPOLYLINE':
+            # For LWPOLYLINE, we can use the get_points method
             for point in entity.get_points():
                 bounding_box.extend([point[:3]])  # Assuming point has (x, y, z)
+
+        elif entity.dxftype() == 'POLYLINE':
+            # For POLYLINE, use the vertices attribute to access points
+            for vertex in entity.vertices:
+                bounding_box.extend([vertex.dxf.location])
 
         elif entity.dxftype() == 'TEXT':
             insert_point = entity.dxf.insert
@@ -476,8 +482,8 @@ def print_bom(bom):
         print(f"{it:<3}|{L:<4}|{N:<5}|{D:<4}|{pid_TAG:<10}|{comp_type:<30}|{description:<30}")
     
 if __name__ == "__main__":
-    dwg_file = r"P&ID_simple.dxf"  # Corrected the file path
-    
+    #dwg_file = r"P&ID_simple.dxf"  # Corrected the file path
+    dwg_file = r"Schema di funzionamento_rev1.1.dxf"
     components = extract_blocks_with_attributes_and_dimensions(dwg_file)
     
 

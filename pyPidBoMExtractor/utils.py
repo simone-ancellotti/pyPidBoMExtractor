@@ -1,12 +1,13 @@
-import ezdxf
-from ezdxf.math import BoundingBox
+import numpy as np
 from ezdxf.math import BoundingBox, Vec3
-import numpy as np 
 import re
 
 listTagBlockNames = ('Tag_block','Ball_Tag',
                      'STICKER Moving Machine', 'STICKER Equipment Name',
                      'Tag_Instrument')
+
+
+
 
 def normalize(v):
     v=np.array(v)
@@ -28,90 +29,6 @@ def print_block_entities(block_def):
                     print(f"  {attr}: Error retrieving attribute - {e}")
         print("\n")
 
-def _old__extract_blocks_with_attributes_and_dimensions(dwg_file_path):
-    # Load the DWG file
-    dwg = ezdxf.readfile(dwg_file_path)
-    msp = dwg.modelspace()
-
-    components = []
-
-    # Iterate over all block references (INSERT entities) in the modelspace
-    for entity in msp.query('INSERT'):
-        block_name = entity.dxf.name
-        insert_point = entity.dxf.insert
-
-        # Extract attributes associated with the block
-        attributes = {}
-        for attrib in entity.attribs:
-            attributes[attrib.dxf.tag] = attrib.dxf.text
-
-        # Check if the block definition contains a circle
-        block_def = dwg.blocks.get(block_name)
-        contains_circle = any(e.dxftype() == 'CIRCLE' for e in block_def)
-
-        # Calculate the dimensions of the block
-        dimensions = get_block_dimensions(block_def)
-
-        component = {
-            "block_name": block_name,
-            "insert_point": (insert_point.x, insert_point.y),
-            "attributes": attributes,
-            "contains_circle": contains_circle,
-            "dimensions": dimensions,  # Adding dimensions to the component
-            "block_def": block_def
-        }
-        components.append(component)
-
-    return components
-
-def extract_blocks_with_attributes_and_dimensions(dwg_file_path):
-    # Load the DWG file
-    dwg = ezdxf.readfile(dwg_file_path)
-    msp = dwg.modelspace()
-
-    components = []
-
-    # Iterate over all block references (INSERT entities) in the modelspace
-    for entity in msp.query('INSERT'):
-        block_name = entity.dxf.name
-        insert_point = entity.dxf.insert
-
-        # Extract attributes associated with the block
-        attributes = {}
-        for attrib in entity.attribs:
-            attributes[attrib.dxf.tag] = attrib.dxf.text
-
-        # Get the scaling factors
-        scale_x = getattr(entity.dxf, 'xscale', 1.0)  # Default to 1.0 if not found
-        scale_y = getattr(entity.dxf, 'yscale', 1.0)  # Default to 1.0 if not found
-        scale_z = getattr(entity.dxf, 'zscale', 1.0)  # Default to 1.0 if not found
-
-        # Check if the block definition contains a circle
-        block_def = dwg.blocks.get(block_name)
-        contains_circle = any(e.dxftype() == 'CIRCLE' for e in block_def)
-
-        # Print the block entities for debugging
-        #print(f"Block: {block_name}")
-        #print_block_entities(block_def)
-        
-        # Calculate the final bounding box dimensions of the block
-        dimensions = get_block_final_bounding_box(block_def, scale_x, scale_y, scale_z)
-        
-        if dimensions is None:
-            # Assign default dimensions if no geometric entities were found
-            dimensions = {"width": 10 * scale_x, "height": 10 * scale_y}
-
-        component = {
-            "block_name": block_name,
-            "insert_point": (insert_point.x, insert_point.y),
-            "attributes": attributes,
-            "contains_circle": contains_circle,
-            "dimensions": dimensions,  # Adding dimensions to the component
-            "block_def" : block_def
-        }
-        components.append(component)
-
-    return components
 
 def get_block_dimensions(block_def):
     """Calculate the width and height of a block using its bounding box."""
@@ -398,7 +315,7 @@ def getTagCode(block):
         key_TargetObjectType_lower = key_TargetObjectType.lower()
         key_TargetObjectLoopNumber_lower = key_TargetObjectLoopNumber.lower()
         key_TargetObjectTag_lower = key_TargetObjectTag.lower()
-
+        
         # Attempt to fetch both values in a single step, avoiding redundant lookups
         targetObjectType = attributes_lower.get(key_TargetObjectType_lower)
         targetObjectLoopNumber = attributes_lower.get(key_TargetObjectLoopNumber_lower)
@@ -418,85 +335,3 @@ def getTagCode(block):
     else:
         raise ValueError("The provided block is not a TagBlock.")
 
-def generate_bom(components):
-    
-    tagBlocks = [c for c in components if isTagBlock(c)]
-    bom = {}
-    i=-1
-    for component in tagBlocks:
-        i+=1
-        number = i+1
-        block_name = component['block_name']
-        attributes = component['attributes']
-        #contains_circle = component['contains_circle']
-        
-        targetObjectType, targetObjectLoopNumber, targetObjectType2nd = getTagCode(component)     
-        typeTag,distance = findTypeBlockFromTag(component,components)
-        description = attributes.get('DESCRIPTION')
-        
-        bom.update( {number:{
-                "count":number,
-                'targetObjectType':targetObjectType,
-                'targetObjectLoopNumber':targetObjectLoopNumber,
-                'targetObjectType2nd':targetObjectType2nd,
-                'TYPE':typeTag,
-                'description':description
-                }})
-        # # If block has a 'NUMBER' attribute, include it in the BOM
-        # number = attributes.get('NUMBER', None)
-        # if number:
-        #     if number in bom:
-        #         bom[number]['count'] += 1
-        #     else:
-        #         bom[number] = {"count": 1, "contains_circle": contains_circle, "dimensions": component['dimensions']}
-        # else:
-        #     print(f"Block '{block_name}' does not have a 'NUMBER' attribute.")
-
-    return bom
-
-# def print_bom(bom):
-#     # Print the BOM with formatting and sorting by component number
-#     print("\nGenerated BOM with Dimensions:\n")
-#     print(f"{'Component':<12}{'Count':<8}{'Contains Circle':<20}{'Width':<10}{'Height':<10}")
-#     print("-" * 60)
-#     for component, info in sorted(bom.items()):
-#         dimensions = info.get('dimensions', {})
-#         width = dimensions.get('width', 'N/A')
-#         height = dimensions.get('height', 'N/A')
-#         print(f"{component:<12}{info['count']:<8}{str(info['contains_circle']):<20}{width:<10}{height:<10}")
-        
-
-def print_bom(bom):
-    print("\nGenerated BOM:\n")
-    print(f"{'#':<3}|{'L':<4}|{'N':<5}|{'D':<4}|{'P&ID TAG':<10}|{'Type':<30}|{'Description':<30}")
-    print("-" * 40)
-    for it in bom.keys():
-        component = bom[it]
-        L = component['targetObjectType']
-        N = component['targetObjectLoopNumber']
-        D = component['targetObjectType2nd']
-        pid_TAG = str(L)+str(N)+str(D)
-        comp_type = component['TYPE']
-        description=component['description']
-        if description == None: description=''
-        print(f"{it:<3}|{L:<4}|{N:<5}|{D:<4}|{pid_TAG:<10}|{comp_type:<30}|{description:<30}")
-    
-if __name__ == "__main__":
-    #dwg_file = r"P&ID_simple.dxf"  # Corrected the file path
-    dwg_file = r"Schema di funzionamento_rev1.1.dxf"
-    components = extract_blocks_with_attributes_and_dimensions(dwg_file)
-    
-
-    # Print the formatted BOM with dimensions
-
-    tagBlocks = [c for c in components if isTagBlock(c)]
-    bom = generate_bom(components)
-    print_bom(bom)
-        
-    
-    # u5 = tagBlocks[0]
-    # findBlocksNearBlock(u5,components )
-    
-#	Q. ty	L	N	D	P&ID TAG	Original P&ID tag	Fluid	Unit	DI	DO	AI	AO	joint	Skid	Type	Description
-    
-    

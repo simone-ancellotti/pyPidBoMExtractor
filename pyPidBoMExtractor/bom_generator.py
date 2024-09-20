@@ -48,18 +48,46 @@ def export_bom_to_excel(bom_data, template_path, output_path):
     # Load the template file
     workbook = openpyxl.load_workbook(template_path)
     sheet = workbook.active  # Assuming the BOM sheet is the active one
-
+    
+    # Mapping between BOM keys and Excel column headers
+    header_mapping = {
+        'count': '#',
+        'targetObjectType': 'L',
+        'targetObjectLoopNumber': 'N',
+        'targetObjectType2nd': 'D',
+        'TYPE': 'Type',
+        'description': 'Description'
+    }
+    
+    # Find the corresponding column index for each header in the Excel template
+    header_row = 1  # Assuming headers are in the first row
+    column_indexes = {}
+    
+    for col in range(1, sheet.max_column + 1):
+        header_value = sheet.cell(row=header_row, column=col).value
+        for bom_key, header_name in header_mapping.items():
+            if header_value == header_name:
+                column_indexes[bom_key] = col
+        if header_value == 'P&ID TAG':
+            pid_tag_col = col  # Find the column for "P&ID TAG"
+    
     # Start writing BOM data after the header row (e.g., starting at row 2)
     start_row = 2
+    for i, bom_item in enumerate(bom_data.values(), start=start_row):
+        # Write the regular BOM fields
+        for bom_key, value in bom_item.items():
+            if bom_key in column_indexes:
+                col = column_indexes[bom_key]
+                sheet.cell(row=i, column=col).value = value
+        
+        # Generate and write the "P&ID TAG" (L + N + D)
+        l_value = bom_item.get('targetObjectType', '')
+        n_value = str(bom_item.get('targetObjectLoopNumber', ''))
+        d_value = bom_item.get('targetObjectType2nd', '')
+        
+        pid_tag = f"{l_value}{n_value}{d_value}"
+        sheet.cell(row=i, column=pid_tag_col).value = pid_tag
     
-    for i, bom_item in enumerate(bom_data, start=start_row):
-        # Assuming bom_item is a dictionary or list where you know the order of columns
-        sheet.cell(row=i, column=1).value = bom_item['component_name']  # Example column 1
-        sheet.cell(row=i, column=2).value = bom_item['quantity']        # Example column 2
-        sheet.cell(row=i, column=3).value = bom_item['description']     # Example column 3
-
-        # Add more columns based on the template structure
-
     # Save the workbook with a new name
     workbook.save(output_path)
     print(f"BOM successfully exported to {output_path}")

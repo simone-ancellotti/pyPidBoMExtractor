@@ -1,7 +1,10 @@
 from .utils import isTagBlock, getTagCode, findTypeBlockFromTag
 from .extractor import extract_blocks_with_attributes_and_dimensions
 import openpyxl
+from openpyxl.styles import PatternFill
 import pandas as pd
+
+
 
 def generate_bom(components):
     
@@ -148,17 +151,49 @@ def convert_bom_dxf_to_dataframe(bom_dxf):
 
     return bom_df
 
+def highlight_missing_item_in_excel(item, sheet,bom_revised):
+    # Find the row in the revised BOM DataFrame
+    row = bom_revised[bom_revised['P&ID TAG'] == item]
+    if not row.empty:
+        row_index = row.index[0] + 2  # Adjust for header row
+        # Highlight the cells in red
+        for col in range(1, sheet.max_column + 1):  # Adjust to the range of your actual columns
+            sheet.cell(row=row_index, column=col).fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
 
+        
+def add_missing_items_to_excel(missing_items, sheet, bom_dxf_df):
+    """ Add missing items from the DXF BOM to the Excel sheet and highlight them in grey. """
+    start_row = sheet.max_row + 1  # Find the next empty row
+    for item in missing_items:
+        dxf_row = bom_dxf_df[bom_dxf_df['P&ID TAG'] == item].iloc[0]
+        new_row = [
+            dxf_row['count'],
+            dxf_row['targetObjectType'],
+            dxf_row['targetObjectLoopNumber'],
+            dxf_row['targetObjectType2nd'],
+            dxf_row['Type'],
+            dxf_row['Description'],
+            item  # Assuming you want to add the P&ID TAG as well
+        ]
+        
+        # Append the new row to the sheet
+        sheet.append(new_row)
+        
+        # Highlight the new row in grey
+        for col in range(1, len(new_row) + 1):
+            sheet.cell(row=start_row, column=col).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+        
+        start_row += 1  # Move to the next row
+        
 
-def compare_boms(bom_dxf_df, bom_revised):
-    """ Compare two BOMs and print differences. """
+def compare_boms(bom_dxf_df, bom_revised, revised_excel_file=None, highlight_missing=False):
+    """ Compare two BOMs and print differences. Optionally highlight missing components in red. """
     
-    # Convert bom_dxf to a DataFrame
-
-    # Filter out rows where L, N, D, or P&ID TAG are empty
-    # bom_dxf_df = bom_dxf_df.dropna(subset=['targetObjectType', 'targetObjectLoopNumber', 'targetObjectType2nd', 'P&ID TAG'])
-    # bom_dxf_df = bom_dxf_df[bom_dxf_df[['targetObjectType', 'targetObjectLoopNumber', 'targetObjectType2nd', 'P&ID TAG']].applymap(lambda x: x not in [None, ''])]
-
+    sheet = None
+    if highlight_missing and revised_excel_file:
+        workbook = openpyxl.load_workbook(revised_excel_file)
+        sheet = workbook.active
+    
     # Filter the revised BOM similarly
     bom_revised = bom_revised.dropna(subset=['L', 'N', 'D', 'P&ID TAG'])
     
@@ -180,17 +215,33 @@ def compare_boms(bom_dxf_df, bom_revised):
         for item in missing_in_dxf:
             print(item)
 
-    # Optional: Compare other attributes (Type, Description, etc.)
+            # Highlight in the revised Excel file if specified
+            if sheet:
+                highlight_missing_item_in_excel(item, sheet, bom_revised)
+
+    if sheet:
+        workbook.save(revised_excel_file)  # Save changes to the Excel file
+
+    # New feature: Ask if the user wants to import missing items from the DXF
+    if missing_in_revised:
+        import_missing = input("Do you want to import missing items from DXF to Excel? New added items rows will be highlighted in grey. <yes,no>: ").strip().lower()
+        if import_missing == 'yes' and sheet:
+            add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_df)
+            workbook.save(revised_excel_file)  # Save the updated Excel file
+
+    # Compare attributes
     print("\nComparing attributes of matching components...")
     for tag in bom_dxf_set.intersection(bom_revised_set):
         dxf_row = bom_dxf_df[bom_dxf_df['P&ID TAG'] == tag].iloc[0]
         revised_row = bom_revised[bom_revised['P&ID TAG'] == tag].iloc[0]
         
         # Check for differences in attributes (Type, Description, etc.)
-        for column in ['Type', 'Description']:  # Add more columns if needed
+        for column in ['Type', 'Description']:
             dxf_value = dxf_row[column] if pd.notna(dxf_row[column]) else None
             if dxf_value == '': dxf_value = None
             revised_value = revised_row[column] if pd.notna(revised_row[column]) else None
             
             if dxf_value != revised_value:
                 print(f"Component {tag}: {column} differs. DXF: {dxf_value}, Revised: {revised_value}")
+    
+    return missing_in_revised, missing_in_dxf

@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logging.info(f"Current working directory: {os.getcwd()}")
 
 # Get the absolute path of the parent directory of pyPidBoMExtractor
-package_path = os.path.abspath('../pyPidBoMExtractor')
+package_path = os.path.abspath('../')
 
 # Insert the package path into sys.path
 sys.path.insert(0, package_path)

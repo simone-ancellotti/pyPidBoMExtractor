@@ -44,9 +44,11 @@ def main():
         # Ask user if they want to highlight missing components
         highlight_option = input("Do you want to mark missing components in red in the revised Excel file? <yes,no>: ").strip().lower()
         highlight_missing = highlight_option == 'yes'
-
+        
+        import_missing = input("Do you want to import missing items from DXF to Excel? New added items rows will be highlighted in grey. <yes,no>: ").strip().lower()
+        import_missingDXF2BOM = import_missing == 'yes'
         # Compare BOMs
-        missing_in_revised, missing_in_dxf = compare_boms(bom_df_dxf, bom_revised, revised_excel_file, highlight_missing)
+        missing_in_revised, missing_in_dxf = compare_boms(bom_df_dxf, bom_revised, revised_excel_file, highlight_missing,import_missingDXF2BOM)
 
     except FileNotFoundError as e:
         logging.error(f"File not found: {e}")

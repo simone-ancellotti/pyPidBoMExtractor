@@ -205,7 +205,7 @@ def add_missing_items_to_excel(missing_items, sheet, bom_dxf_df):
                 sheet.cell(row=start_row, column=col).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
 
-def compare_boms(bom_dxf_df, bom_revised, revised_excel_file=None, highlight_missing=False):
+def compare_boms(bom_dxf_df, bom_revised, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM = False):
     """ Compare two BOMs and print differences. Optionally highlight missing components in red. """
     
     sheet = None
@@ -236,14 +236,17 @@ def compare_boms(bom_dxf_df, bom_revised, revised_excel_file=None, highlight_mis
 
             # Highlight in the revised Excel file if specified
             if sheet:
+                #print('red')
                 highlight_missing_item_in_excel(item, sheet, bom_revised)
+                #workbook.save(revised_excel_file)
 
 
 
     # New feature: Ask if the user wants to import missing items from the DXF
     if missing_in_revised:
-        import_missing = input("Do you want to import missing items from DXF to Excel? New added items rows will be highlighted in grey. <yes,no>: ").strip().lower()
-        if import_missing == 'yes' and sheet:
+        
+        #if import_missing == 'yes' and sheet:
+        if import_missingDXF2BOM and sheet: 
             add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_df)
             #workbook.save(revised_excel_file)  # Save the updated Excel file
             

@@ -13,6 +13,7 @@ build/
 
 # Compiled Python bytecode
 *.py[cod]
+*.spec
 
 # Log files
 *.log

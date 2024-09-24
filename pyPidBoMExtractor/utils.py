@@ -266,8 +266,8 @@ def getTypeFromBlock(block):
     typeTag = None
     if 'TYPE' in attributes.keys():
         typeTag = attributes['TYPE']
-    else: 
-        typeTag = attributes.get('DESCRIPTION')
+    # else: 
+    #     typeTag = attributes.get('DESCRIPTION')
     return typeTag
 
 def findTypeBlockFromTag(block,components):
@@ -279,6 +279,7 @@ def findTypeBlockFromTag(block,components):
     #     typeTag = attributes['TYPE']
     typeTag = getTypeFromBlock(block)
     distance = None
+    block_found = None
     
     if typeTag == '' or typeTag==None:
         # if type not found in block then look for it in the neightbours
@@ -292,7 +293,8 @@ def findTypeBlockFromTag(block,components):
                 i+=1
                 typeTag_i = getTypeFromBlock(comp)
                 if typeTag_i and isinstance(typeTag_i, str) and not(isTagBlock(comp)):
-                    return typeTag_i,distances_with_block0[i]
+                    block_found = comp
+                    return typeTag_i,distances_with_block0[i] , block_found
             
             # if not found type propose to use the name of the block
             i=-1
@@ -300,9 +302,10 @@ def findTypeBlockFromTag(block,components):
                 i+=1
                 typeTag_i = comp['block_name']
                 if len(typeTag_i)>1 and isinstance(typeTag_i, str) and not(isTagBlock(comp)):
-                    return typeTag_i,distances_with_block0[i]
+                    block_found = comp
+                    return typeTag_i,distances_with_block0[i] , block_found
                 
-    return typeTag,distance
+    return typeTag,distance, block_found
 
 
 def parse_tag_code(tag_code):

@@ -11,24 +11,41 @@ header_mapping = {
         'targetObjectLoopNumber': 'N',
         'targetObjectType2nd': 'D',
         'TYPE': 'Type',
-        'description': 'Description'
+        'description': 'Description',
+        'connection_type':'C type'
     }
 
 def generate_bom(components):
-    
-    #tagBlocks = [c for c in components if isTagBlock(c)]
+    # feel free to change the logic
+    tagBlocks = [c for c in components if isTagBlock(c)]
     bom = {}
     i=-1
-    for component in components:
+    for component in tagBlocks:
         i+=1
         number = i+1
         #block_name = component['block_name']
         attributes = component['attributes']
         #contains_circle = component['contains_circle']
         
+        def stripField(field):
+            if isinstance(field, str):
+                field = field.strip() or None
+            return field
+        
         targetObjectType, targetObjectLoopNumber, targetObjectType2nd = getTagCode(component)     
-        typeTag,distance = findTypeBlockFromTag(component,components)
-        description = attributes.get('DESCRIPTION')
+        typeTag,distance,near_block_found = findTypeBlockFromTag(component,components)
+        description = stripField(  attributes.get('DESCRIPTION') ) 
+        connection_type = stripField( attributes.get('CONNECTIONTYPE') )
+        
+        
+        if near_block_found:
+            attributes_near_block_found = near_block_found.get('attributes')
+            if attributes_near_block_found:
+                if not(description):
+                    description = attributes_near_block_found.get('DESCRIPTION')
+                if not(connection_type):
+                    connection_type = attributes_near_block_found.get('CONNECTIONTYPE')
+            
         
         bom.update( {number:{
                 "count":number,
@@ -37,7 +54,8 @@ def generate_bom(components):
                 'targetObjectType2nd':targetObjectType2nd,
                 'P&ID TAG': str(targetObjectType)+str(targetObjectLoopNumber)+str(targetObjectType2nd),
                 'TYPE':typeTag,
-                'description':description
+                'description':description,
+                'connection_type':connection_type
                 }})
     return bom
 
@@ -126,9 +144,7 @@ def extract_bom_from_dxf(dwg_file):
     components = extract_blocks_with_attributes_and_dimensions(dwg_file)
     
     # filter only the blocks stickers TAGs to determine the components in BOM
-    # feel free to change the logic
-    tagBlocks = [c for c in components if isTagBlock(c)]
-    bom = generate_bom(tagBlocks)
+    bom = generate_bom(components)
     # Print the formatted BOM with dimensions
     print_bom(bom)
     return bom

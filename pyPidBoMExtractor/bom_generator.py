@@ -2,9 +2,16 @@ from .utils import isTagBlock, getTagCode, findTypeBlockFromTag
 from .extractor import extract_blocks_with_attributes_and_dimensions
 import openpyxl
 from openpyxl.styles import PatternFill
-import pandas as pd
 
-
+# Mapping between BOM keys and Excel column headers
+header_mapping = {
+        'count': '#',
+        'targetObjectType': 'L',
+        'targetObjectLoopNumber': 'N',
+        'targetObjectType2nd': 'D',
+        'TYPE': 'Type',
+        'description': 'Description'
+    }
 
 def generate_bom(components):
     
@@ -54,15 +61,15 @@ def export_bom_to_excel(bom_data, template_path, output_path):
     workbook = openpyxl.load_workbook(template_path)
     sheet = workbook.active  # Assuming the BOM sheet is the active one
     
-    # Mapping between BOM keys and Excel column headers
-    header_mapping = {
-        'count': '#',
-        'targetObjectType': 'L',
-        'targetObjectLoopNumber': 'N',
-        'targetObjectType2nd': 'D',
-        'TYPE': 'Type',
-        'description': 'Description'
-    }
+    # # Mapping between BOM keys and Excel column headers
+    # header_mapping = {
+    #     'count': '#',
+    #     'targetObjectType': 'L',
+    #     'targetObjectLoopNumber': 'N',
+    #     'targetObjectType2nd': 'D',
+    #     'TYPE': 'Type',
+    #     'description': 'Description'
+    # }
     
     # Find the corresponding column index for each header in the Excel template
     header_row = 1  # Assuming headers are in the first row
@@ -109,116 +116,248 @@ def extract_bom_from_dxf(dwg_file):
     return bom
     
 
-def load_bom_from_excel(file_path):
-    """ Load BOM data from Excel file. """
-    df = pd.read_excel(file_path)
+# def load_bom_from_excel(file_path):
+#     """ Load BOM data from Excel file. """
+#     df = pd.read_excel(file_path)
     
-    # Assuming columns like 'L', 'N', 'D', 'Type', 'Description'
-    df['N'] = df['N'].fillna(0).astype(int).astype(str)  # Convert N to int, then to string
-    df['D'] = df['D'].fillna('').astype(str)  # Convert D to empty string if NaN
+#     # Assuming columns like 'L', 'N', 'D', 'Type', 'Description'
+#     df['N'] = df['N'].fillna(0).astype(int).astype(str)  # Convert N to int, then to string
+#     df['D'] = df['D'].fillna('').astype(str)  # Convert D to empty string if NaN
     
-    # Construct P&ID TAG by concatenating L, N, and D
-    df['P&ID TAG'] = df['L'].astype(str) + df['N'] + df['D']
+#     # Construct P&ID TAG by concatenating L, N, and D
+#     df['P&ID TAG'] = df['L'].astype(str) + df['N'] + df['D']
     
-    return df
+#     return df
 
-def convert_bom_dxf_to_dataframe(bom_dxf):
-    """ Convert BOM dictionary from DXF to a pandas DataFrame. """
+def load_bom_from_excel_to_JSON(file_path):
+    """ Load BOM data from Excel file and return it as a JSON-like dictionary with line numbers. """
+    
+    # Open the Excel file
+    workbook = openpyxl.load_workbook(file_path)
+    sheet = workbook.active  # Assumes data is in the active sheet
+    
+    # Initialize a dictionary to hold the BOM data with line numbers
+    bom_data = {}
+    
+    # Get headers (first row)
+    headers = [cell.value for cell in sheet[1]]
+    
+    # Iterate over rows, starting from the second row (assuming the first row is the header)
+    for i, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=1):
+        
+        if all(cell is None or cell == '' for cell in row):
+            continue  # Skip this row if it is empty
+        row_data = {headers[j]: (row[j] if row[j] is not None else '') for j in range(len(headers))}
+        
+        # Convert 'N' to string after replacing NaN (or empty) values with 0
+        row_data['N'] = str(row_data['N']) if row_data['N'] != '' else '0'
+        
+        # Convert 'D' to an empty string if NaN or None
+        row_data['D'] = str(row_data['D']) if row_data['D'] != '' else ''
+        
+        # Construct P&ID TAG by concatenating L, N, and D
+        row_data['P&ID TAG'] = str(row_data['L']) + row_data['N'] + row_data['D']
+        
+        # Add the row's data to the bom_data dictionary with the row number as the key
+        bom_data[i] = row_data
+    
+    # Return data in JSON-like dictionary format with line numbers as keys
+    return bom_data
+
+# def convert_bom_dxf_to_dataframe(bom_dxf):
+#     """ Convert BOM dictionary from DXF to a pandas DataFrame. """
+#     if not isinstance(bom_dxf, dict):
+#         raise ValueError("Input must be a dictionary.")
+        
+#     # Create a list of dictionaries for each item in the BOM
+#     bom_list = []
+#     for item in bom_dxf.values():
+#         bom_list.append({
+#             '#': item['count'],
+#             'L': item['targetObjectType'],
+#             'N': item['targetObjectLoopNumber'],
+#             'D': item['targetObjectType2nd'],
+#             'Type': item['TYPE'],
+#             'Description': item['description']
+#         })
+    
+#     # Convert the list to a DataFrame
+#     bom_df = pd.DataFrame(bom_list)
+
+#     # Create the P&ID TAG column
+#     bom_df['P&ID TAG'] = (
+#         bom_df['L'].astype(str) +
+#         bom_df['N'].astype(str) +
+#         bom_df['D'].astype(str)
+#     )
+
+#     return bom_df
+
+
+def convert_bom_dxf_to_JSON(bom_dxf):
+    """ Convert BOM dictionary from DXF changing keys names as the headers in excell. """
     if not isinstance(bom_dxf, dict):
         raise ValueError("Input must be a dictionary.")
-        
-    # Create a list of dictionaries for each item in the BOM
-    bom_list = []
-    for item in bom_dxf.values():
-        bom_list.append({
-            '#': item['count'],
-            'L': item['targetObjectType'],
-            'N': item['targetObjectLoopNumber'],
-            'D': item['targetObjectType2nd'],
-            'Type': item['TYPE'],
-            'Description': item['description']
-        })
     
-    # Convert the list to a DataFrame
-    bom_df = pd.DataFrame(bom_list)
+    bom_dxf2 = bom_dxf.copy()
+    for i in bom_dxf2.keys():
+        comp = bom_dxf2[i]
+        for key in header_mapping.keys():
+            if key in comp.keys():
+                key_new = header_mapping[key]
+                value = comp[key]
+                comp.update({key_new:value})
+                del comp[key]
+        L = comp['L']
+        N = comp['N']
+        D = comp['D']
+        PID_TAG = str(L)+str(N)+str(D)
+        comp.update({'P&ID TAG':PID_TAG,  })
 
-    # Create the P&ID TAG column
-    bom_df['P&ID TAG'] = (
-        bom_df['L'].astype(str) +
-        bom_df['N'].astype(str) +
-        bom_df['D'].astype(str)
-    )
+    return bom_dxf2
 
-    return bom_df
-
-def highlight_missing_item_in_excel(item, sheet,bom_revised):
-    # Find the row in the revised BOM DataFrame
-    row = bom_revised[bom_revised['P&ID TAG'] == item]
-    if not row.empty:
-        row_index = row.index[0] + 2  # Adjust for header row
-        # Highlight the cells in red
-        for col in range(1, sheet.max_column + 1):  # Adjust to the range of your actual columns
-            sheet.cell(row=row_index, column=col).fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+# def highlight_missing_item_in_excel_old(item, sheet,bom_revised):
+#     # Find the row in the revised BOM DataFrame
+#     row = bom_revised[bom_revised['P&ID TAG'] == item]
+#     if not row.empty:
+#         row_index = row.index[0] + 2  # Adjust for header row
+#         # Highlight the cells in red
+#         for col in range(1, sheet.max_column + 1):  # Adjust to the range of your actual columns
+#             sheet.cell(row=row_index, column=col).fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
 
         
-def add_missing_items_to_excel(missing_items, sheet, bom_dxf_df):
-    """ Add missing items from the DXF BOM to the Excel sheet and highlight them in grey. """
+# def add_missing_items_to_excel_old(missing_items, sheet, bom_dxf_df):
+#     """ Add missing items from the DXF BOM to the Excel sheet and highlight them in grey. """
     
-    # Create a mapping of column headers to their indices
-    header_mapping = {sheet.cell(row=1, column=col).value: col for col in range(1, sheet.max_column + 1)}
-    header_length = len(header_mapping.keys()) 
-    value_to_write = ['#','L','N','D','P&ID TAG','Type','Description']
-    # Iterate through the missing items
-    for item in missing_items:
-        dxf_row = bom_dxf_df[bom_dxf_df['P&ID TAG'] == item].iloc[0]
+#     # Create a mapping of column headers to their indices
+#     header_mapping = {sheet.cell(row=1, column=col).value: col for col in range(1, sheet.max_column + 1)}
+#     header_length = len(header_mapping.keys()) 
+#     value_to_write = ['#','L','N','D','P&ID TAG','Type','Description']
+#     # Iterate through the missing items
+#     for item in missing_items:
+#         dxf_row = bom_dxf_df[bom_dxf_df['P&ID TAG'] == item].iloc[0]
         
-        # # Create a new row based on the header mapping
-        new_row = ['' for k_ in range(header_length)]
-        for col_val in value_to_write:
-            value_row = dxf_row[col_val] 
-            pos_col = header_mapping[col_val]-1
-            new_row[pos_col]=value_row
+#         # # Create a new row based on the header mapping
+#         new_row = ['' for k_ in range(header_length)]
+#         for col_val in value_to_write:
+#             value_row = dxf_row[col_val] 
+#             pos_col = header_mapping[col_val]-1
+#             new_row[pos_col]=value_row
         
         
         
-        # Find the next empty row in the sheet
-        for row in range(2, sheet.max_row + 1):  # Start from row 2 to skip header
-            if all(cell.value is None for cell in sheet[row]):
-                # Replace the empty row with the new row
-                for col_header, value in zip(header_mapping.keys(), new_row):
-                    col_index = header_mapping[col_header]
-                    sheet.cell(row=row, column=col_index).value = value
+#         # Find the next empty row in the sheet
+#         for row in range(2, sheet.max_row + 1):  # Start from row 2 to skip header
+#             if all(cell.value is None for cell in sheet[row]):
+#                 # Replace the empty row with the new row
+#                 for col_header, value in zip(header_mapping.keys(), new_row):
+#                     col_index = header_mapping[col_header]
+#                     sheet.cell(row=row, column=col_index).value = value
                 
-                # Highlight the new row in grey
-                for col in range(1, len(new_row) + 1):
-                    sheet.cell(row=row, column=col).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
-                break
-        else:
-            # If no empty row found, append to the end of the sheet
-            start_row = sheet.max_row + 1
-            for col_header, value in zip(header_mapping.keys(), new_row):
-                col_index = header_mapping[col_header]
-                sheet.cell(row=start_row, column=col_index).value = value
+#                 # Highlight the new row in grey
+#                 for col in range(1, len(new_row) + 1):
+#                     sheet.cell(row=row, column=col).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+#                 break
+#         else:
+#             # If no empty row found, append to the end of the sheet
+#             start_row = sheet.max_row + 1
+#             for col_header, value in zip(header_mapping.keys(), new_row):
+#                 col_index = header_mapping[col_header]
+#                 sheet.cell(row=start_row, column=col_index).value = value
             
-            # Highlight the new row in grey
-            for col in range(1, len(new_row) + 1):
-                sheet.cell(row=start_row, column=col).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+#             # Highlight the new row in grey
+#             for col in range(1, len(new_row) + 1):
+#                 sheet.cell(row=start_row, column=col).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
 
-def compare_boms(bom_dxf_df, bom_revised, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM = False):
-    """ Compare two BOMs and print differences. Optionally highlight missing components in red. """
+# def compare_boms(bom_dxf_df, bom_revised, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM = False):
+#     """ Compare two BOMs and print differences. Optionally highlight missing components in red. """
     
+#     sheet = None
+#     if highlight_missing and revised_excel_file:
+#         workbook = openpyxl.load_workbook(revised_excel_file)
+#         sheet = workbook.active
+    
+#     # Filter the revised BOM similarly
+#     bom_revised = bom_revised.dropna(subset=['L', 'N', 'D', 'P&ID TAG'])
+    
+#     # Create sets of P&ID TAGs for comparison
+#     bom_dxf_set = set(bom_dxf_df['P&ID TAG'])
+#     bom_revised_set = set(bom_revised['P&ID TAG'])
+
+#     # Components in BOM_dxf but not in BOM_revised
+#     missing_in_revised = bom_dxf_set - bom_revised_set
+#     if missing_in_revised:
+#         print("\nComponents in DXF but not in the revised BOM:")
+#         for item in missing_in_revised:
+#             print(item)
+
+#     # Components in BOM_revised but not in BOM_dxf
+#     missing_in_dxf = bom_revised_set - bom_dxf_set
+#     if missing_in_dxf:
+#         print("\nComponents in revised BOM but not in DXF BOM:")
+#         for item in missing_in_dxf:
+#             print(item)
+
+#             # Highlight in the revised Excel file if specified
+#             if sheet:
+#                 #print('red')
+#                 highlight_missing_item_in_excel(item, sheet, bom_revised)
+#                 #workbook.save(revised_excel_file)
+
+
+
+#     # New feature: Ask if the user wants to import missing items from the DXF
+#     if missing_in_revised:
+        
+#         #if import_missing == 'yes' and sheet:
+#         if import_missingDXF2BOM and sheet: 
+#             add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_df)
+#             #workbook.save(revised_excel_file)  # Save the updated Excel file
+            
+#     if sheet:
+#         workbook.save(revised_excel_file)  # Save changes to the Excel file
+#     # Compare attributes
+#     print("\nComparing attributes of matching components...")
+#     for tag in bom_dxf_set.intersection(bom_revised_set):
+#         dxf_row = bom_dxf_df[bom_dxf_df['P&ID TAG'] == tag].iloc[0]
+#         revised_row = bom_revised[bom_revised['P&ID TAG'] == tag].iloc[0]
+        
+#         # Check for differences in attributes (Type, Description, etc.)
+#         for column in ['Type', 'Description']:
+#             dxf_value = dxf_row[column] if pd.notna(dxf_row[column]) else None
+#             if dxf_value == '': dxf_value = None
+#             revised_value = revised_row[column] if pd.notna(revised_row[column]) else None
+            
+#             if dxf_value != revised_value:
+#                 print(f"Component {tag}: {column} differs. DXF: {dxf_value}, Revised: {revised_value}")
+    
+#     return missing_in_revised, missing_in_dxf
+
+
+
+def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM=False):
+    """Compare two BOMs and print differences. Optionally highlight missing components in red."""
+
     sheet = None
-    if highlight_missing and revised_excel_file:
+    if (highlight_missing or import_missingDXF2BOM) and revised_excel_file:
         workbook = openpyxl.load_workbook(revised_excel_file)
         sheet = workbook.active
-    
-    # Filter the revised BOM similarly
-    bom_revised = bom_revised.dropna(subset=['L', 'N', 'D', 'P&ID TAG'])
-    
-    # Create sets of P&ID TAGs for comparison
-    bom_dxf_set = set(bom_dxf_df['P&ID TAG'])
-    bom_revised_set = set(bom_revised['P&ID TAG'])
+
+    # Filter bom_dxf and bom_revised to include only entries with 'L', 'N', 'D', 'P&ID TAG' present and not empty
+    def filter_bom(bom):
+        filtered_bom = {}
+        for key, comp in bom.items():
+            if all(comp.get(field) not in [None, ''] for field in ['L', 'N', 'P&ID TAG']):
+                filtered_bom[key] = comp
+        return filtered_bom
+
+    bom_dxf_filtered = filter_bom(bom_dxf)
+    bom_revised_filtered = filter_bom(bom_revisedJSON)
+
+    # Create sets of 'P&ID TAG's
+    bom_dxf_set = set(comp['P&ID TAG'] for comp in bom_dxf_filtered.values())
+    bom_revised_set = set(comp['P&ID TAG'] for comp in bom_revised_filtered.values())
 
     # Components in BOM_dxf but not in BOM_revised
     missing_in_revised = bom_dxf_set - bom_revised_set
@@ -233,38 +372,83 @@ def compare_boms(bom_dxf_df, bom_revised, revised_excel_file=None, highlight_mis
         print("\nComponents in revised BOM but not in DXF BOM:")
         for item in missing_in_dxf:
             print(item)
-
             # Highlight in the revised Excel file if specified
-            if sheet:
-                #print('red')
-                highlight_missing_item_in_excel(item, sheet, bom_revised)
-                #workbook.save(revised_excel_file)
+            if sheet and highlight_missing:
+                highlight_missing_item_in_excel(item, sheet)
 
+    # Add missing items from DXF to Excel if requested
+    if missing_in_revised and import_missingDXF2BOM and sheet:
+        add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_filtered)
 
-
-    # New feature: Ask if the user wants to import missing items from the DXF
-    if missing_in_revised:
-        
-        #if import_missing == 'yes' and sheet:
-        if import_missingDXF2BOM and sheet: 
-            add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_df)
-            #workbook.save(revised_excel_file)  # Save the updated Excel file
-            
     if sheet:
         workbook.save(revised_excel_file)  # Save changes to the Excel file
-    # Compare attributes
+
+    # Compare attributes of matching components
     print("\nComparing attributes of matching components...")
     for tag in bom_dxf_set.intersection(bom_revised_set):
-        dxf_row = bom_dxf_df[bom_dxf_df['P&ID TAG'] == tag].iloc[0]
-        revised_row = bom_revised[bom_revised['P&ID TAG'] == tag].iloc[0]
-        
-        # Check for differences in attributes (Type, Description, etc.)
+        # Find the component in each BOM
+        dxf_comp = next(comp for comp in bom_dxf_filtered.values() if comp['P&ID TAG'] == tag)
+        revised_comp = next(comp for comp in bom_revised_filtered.values() if comp['P&ID TAG'] == tag)
+        # Compare 'Type' and 'Description'
         for column in ['Type', 'Description']:
-            dxf_value = dxf_row[column] if pd.notna(dxf_row[column]) else None
-            if dxf_value == '': dxf_value = None
-            revised_value = revised_row[column] if pd.notna(revised_row[column]) else None
-            
+            dxf_value = dxf_comp.get(column, None) or None
+            revised_value = revised_comp.get(column, None) or None
             if dxf_value != revised_value:
                 print(f"Component {tag}: {column} differs. DXF: {dxf_value}, Revised: {revised_value}")
-    
+
     return missing_in_revised, missing_in_dxf
+
+def highlight_missing_item_in_excel(item, sheet):
+    """Highlight the row corresponding to 'item' in the Excel sheet."""
+    # Assuming the first row is the header
+    pid_tag_col = None
+    # Find the column index for 'P&ID TAG'
+    for col in range(1, sheet.max_column + 1):
+        header_value = sheet.cell(row=1, column=col).value
+        if header_value == 'P&ID TAG':
+            pid_tag_col = col
+            break
+    if pid_tag_col is None:
+        print("P&ID TAG column not found in Excel sheet.")
+        return
+    # Iterate over the rows to find the item
+    for row in range(2, sheet.max_row + 1):  # Start from 2 to skip header
+        cell_value = sheet.cell(row=row, column=pid_tag_col).value
+        if cell_value == item:
+            # Highlight the entire row in red
+            for col in range(1, sheet.max_column + 1):
+                sheet.cell(row=row, column=col).fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+            break  # Exit after highlighting the row
+
+def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
+    """Add missing items from the DXF BOM to the Excel sheet and highlight them in grey."""
+    # Create a mapping of column headers to their indices
+    header_mapping = {sheet.cell(row=1, column=col).value: col for col in range(1, sheet.max_column + 1)}
+
+    # Helper function to check if a row is empty
+    def is_row_empty(row):
+        return all(cell.value in (None, '') for cell in row)
+
+    # Iterate through the missing items
+    for item in missing_items:
+        # Find the component in bom_dxf
+        dxf_comp = next(comp for comp in bom_dxf.values() if comp['P&ID TAG'] == item)
+
+        # Search for the first available empty row starting from row 2 (assuming row 1 has headers)
+        row_num = None
+        for row in range(2, sheet.max_row + 1):
+            if is_row_empty(sheet[row]):
+                row_num = row
+                break
+
+        # If no empty row was found, append to the end of the sheet
+        if row_num is None:
+            row_num = sheet.max_row + 1
+
+        # Write data to the identified row (either an existing empty row or a new row)
+        for header, col_index in header_mapping.items():
+            value = dxf_comp.get(header, '')
+            sheet.cell(row=row_num, column=col_index).value = value
+
+            # Highlight the new row in grey
+            sheet.cell(row=row_num, column=col_index).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")

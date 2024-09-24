@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import logging
-from pyPidBoMExtractor.bom_generator import load_bom_from_excel, extract_bom_from_dxf, export_bom_to_excel, convert_bom_dxf_to_dataframe, compare_boms
+# Import the pyPidBoMExtractor package
+from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf
+from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 import os
 
 # Configure logging to display in terminal
@@ -114,10 +116,12 @@ class BOMExtractorApp(tk.Tk):
                 return
 
             # Load the revised Excel file as a DataFrame
-            bom_revised = load_bom_from_excel(self.revised_excel_file)
+            # bom_revised = load_bom_from_excel(self.revised_excel_file)
+            bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
 
             # Convert BOM from DXF to DataFrame
-            bom_df_dxf = convert_bom_dxf_to_dataframe(self.bom_dxf)
+            #bom_df_dxf = convert_bom_dxf_to_dataframe(self.bom_dxf)
+            bom_dxf     = convert_bom_dxf_to_JSON(self.bom_dxf)
 
             # Check if the user wants to highlight missing components
             highlight_missing = self.highlight_missing.get()
@@ -126,7 +130,8 @@ class BOMExtractorApp(tk.Tk):
             import_missingDXF2BOM = self.import_missing.get()
 
             # Perform BOM comparison
-            missing_in_revised, missing_in_dxf = compare_boms(bom_df_dxf, bom_revised, self.revised_excel_file, highlight_missing, import_missingDXF2BOM)
+            # missing_in_revised, missing_in_dxf = compare_boms(bom_df_dxf, bom_revised, self.revised_excel_file, highlight_missing, import_missingDXF2BOM)
+            missing_in_revised, missing_in_dxf = compare_bomsJSON(bom_dxf, bom_revisedJSON, self.revised_excel_file, highlight_missing,import_missingDXF2BOM)
             
             # Display comparison results
             messagebox.showinfo("Comparison Results", f"Missing in Revised: {missing_in_revised}\nMissing in DXF: {missing_in_dxf}")

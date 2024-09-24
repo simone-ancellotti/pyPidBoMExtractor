@@ -1,6 +1,7 @@
-import numpy as np
+#import numpy as np
 from ezdxf.math import BoundingBox, Vec3
 import re
+import math
 
 listTagBlockNames = ('Tag_block','Ball_Tag',
                      'STICKER Moving Machine', 'STICKER Equipment Name',
@@ -10,10 +11,20 @@ listTagBlockNames = ('Tag_block','Ball_Tag',
 
 
 def normalize(v):
-    v=np.array(v)
-    norm = np.linalg.norm(v)
-    if norm == 0: return v
-    return v / norm
+    # Calculate the Euclidean norm (L2 norm)
+    norm = math.sqrt(sum(x ** 2 for x in v))
+    
+    if norm == 0:
+        return v  # Return the vector unchanged if the norm is 0
+    
+    # Divide each component by the norm to normalize the vector
+    return [x / norm for x in v]
+
+# def normalize(v):
+#     v=np.array(v)
+#     norm = np.linalg.norm(v)
+#     if norm == 0: return v
+#     return v / norm
 
 def print_block_entities(block_def):
     """Print the details of each entity in a block definition."""
@@ -190,21 +201,32 @@ def getCaracteristicDimensionBlock(block):
 def getCriticalDistance(dim1,dim2):
     return dim1/2.0 + dim2/2.0 + max(dim1,dim2) * 0.5
 
+def calculate_distance(point1, point2):
+    """
+    Calculate the Euclidean distance between two points in any dimension.
+    :param point1: List or tuple representing the coordinates of the first point (e.g., [x, y] or [x, y, z])
+    :param point2: List or tuple representing the coordinates of the second point (e.g., [x, y] or [x, y, z])
+    :return: Euclidean distance between the two points
+    """
+    return math.sqrt(sum((a - b) ** 2 for a, b in zip(point1, point2)))
 
 def findBlocksNearBlock(block,components ):
     filtered_blocks = []
     distances_with_block0 = []
-    positionBlock0 = np.array(block['insert_point'])
+    # positionBlock0 = np.array(block['insert_point'])
+    positionBlock0 = block['insert_point']
     mainDimBlock0  = getCaracteristicDimensionBlock(block)
     i=-1
     for component in components:
         i+=1
         if block['block_def'] != component['block_def']:
-            positionComponent1 = np.array(component['insert_point'])
+            # positionComponent1 = np.array(component['insert_point'])
+            positionComponent1 = component['insert_point']
             mainDim1 = getCaracteristicDimensionBlock(component)
             
             criticalDistance = getCriticalDistance(mainDimBlock0,mainDim1)
-            distance = np.linalg.norm(positionBlock0 - positionComponent1)
+            # distance = np.linalg.norm(positionBlock0 - positionComponent1)
+            distance = calculate_distance(positionBlock0, positionComponent1)
             if distance <= criticalDistance:
                 filtered_blocks.append(component)
                 distances_with_block0.append(distance)
@@ -256,7 +278,7 @@ def findTypeBlockFromTag(block,components):
     # if 'TYPE' in attributes.items():
     #     typeTag = attributes['TYPE']
     typeTag = getTypeFromBlock(block)
-    distance = np.nan
+    distance = None
     
     if typeTag == '' or typeTag==None:
         # if type not found in block then look for it in the neightbours

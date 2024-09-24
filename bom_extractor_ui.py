@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import logging
 # Import the pyPidBoMExtractor package
-from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf
+from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf, sortingBOM_dict
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 import os
 
@@ -23,7 +23,7 @@ class BOMExtractorApp(tk.Tk):
         self.bom_dxf = None
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
-        
+        self.flagSaveNewExcellFile = tk.BooleanVar() 
         # UI Setup
         self.setup_ui()
 
@@ -62,10 +62,14 @@ class BOMExtractorApp(tk.Tk):
         # Checkbox to select whether to import missing DXF items into Excel (Center)
         self.import_checkbox = tk.Checkbutton(self, text="Import missing DXF items to Excel", variable=self.import_missing)
         self.import_checkbox.grid(row=4, column=1, padx=20, pady=10, sticky='e')
+        
+        # Checkbox to select whether save new file or modifiy exisiting file
+        self.import_checkbox = tk.Checkbutton(self, text="Save as new updated excell File", variable=self.flagSaveNewExcellFile)
+        self.import_checkbox.grid(row=5, column=1, padx=20, pady=10, sticky='e')
 
         # Button to Compare BOM (Bottom-Center)
         self.compare_button = tk.Button(self, text="Compare BOM vs DXF", state=tk.DISABLED, command=self.compare_bom)
-        self.compare_button.grid(row=5, column=0, columnspan=2, padx=20, pady=20)
+        self.compare_button.grid(row=6, column=0, columnspan=2, padx=20, pady=20)
 
     def upload_dxf(self):
         # Open file dialog to select a DXF file
@@ -100,6 +104,7 @@ class BOMExtractorApp(tk.Tk):
         try:
             logging.info("Extracting BOM from DXF...")
             self.bom_dxf = extract_bom_from_dxf(self.dwg_file)
+            
             output_path = os.path.splitext(self.dwg_file)[0] + "_bom.xlsx"
             export_bom_to_excel(self.bom_dxf, self.template_BOM_xls_path, output_path)
             messagebox.showinfo("Success", f"BOM successfully exported to {output_path}")
@@ -128,10 +133,11 @@ class BOMExtractorApp(tk.Tk):
             
             # Check if the user wants to import missing items from DXF to Excel
             import_missingDXF2BOM = self.import_missing.get()
+            flagSaveNewExcellFile = self.flagSaveNewExcellFile.get()
 
             # Perform BOM comparison
             # missing_in_revised, missing_in_dxf = compare_boms(bom_df_dxf, bom_revised, self.revised_excel_file, highlight_missing, import_missingDXF2BOM)
-            missing_in_revised, missing_in_dxf = compare_bomsJSON(bom_dxf, bom_revisedJSON, self.revised_excel_file, highlight_missing,import_missingDXF2BOM)
+            missing_in_revised, missing_in_dxf = compare_bomsJSON(bom_dxf, bom_revisedJSON, self.revised_excel_file, highlight_missing,import_missingDXF2BOM,flagSaveNewExcellFile)
             
             # Display comparison results
             messagebox.showinfo("Comparison Results", f"Missing in Revised: {missing_in_revised}\nMissing in DXF: {missing_in_dxf}")

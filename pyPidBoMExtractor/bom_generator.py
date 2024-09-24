@@ -2,6 +2,7 @@ from .utils import isTagBlock, getTagCode, findTypeBlockFromTag
 from .extractor import extract_blocks_with_attributes_and_dimensions
 import openpyxl
 from openpyxl.styles import PatternFill
+import os
 
 # Mapping between BOM keys and Excel column headers
 header_mapping = {
@@ -34,6 +35,7 @@ def generate_bom(components):
                 'targetObjectType':targetObjectType,
                 'targetObjectLoopNumber':targetObjectLoopNumber,
                 'targetObjectType2nd':targetObjectType2nd,
+                'P&ID TAG': str(targetObjectType)+str(targetObjectLoopNumber)+str(targetObjectType2nd),
                 'TYPE':typeTag,
                 'description':description
                 }})
@@ -55,7 +57,22 @@ def print_bom(bom):
         print(f"{it:<3}|{L:<4}|{N:<5}|{D:<4}|{pid_TAG:<10}|{comp_type:<30}|{description:<30}")
 
 
-
+def sortingBOM_dict(bom_dxf_,bytag = '' ):
+    bom_dxf = bom_dxf_.copy()
+    
+    bom_dxf_items = list(bom_dxf.items())
+        
+    bom_dxf_items_sorted = sorted(bom_dxf_items, key=lambda x: x[1].get(bytag, ''))
+    
+    sorted_bom = {}
+    for i_ in range(len(bom_dxf_items_sorted)):
+        i = i_+1
+        item = bom_dxf_items_sorted[i_][1]
+        item['count'] = i
+        sorted_bom[i] = item
+    return sorted_bom
+    
+    
 def export_bom_to_excel(bom_data, template_path, output_path):
     # Load the template file
     workbook = openpyxl.load_workbook(template_path)
@@ -100,6 +117,7 @@ def export_bom_to_excel(bom_data, template_path, output_path):
         pid_tag = f"{l_value}{n_value}{d_value}"
         sheet.cell(row=i, column=pid_tag_col).value = pid_tag
     
+    sort_rows_by_pid_tag(sheet)
     # Save the workbook with a new name
     workbook.save(output_path)
     print(f"BOM successfully exported to {output_path}")
@@ -161,8 +179,9 @@ def load_bom_from_excel_to_JSON(file_path):
         # Add the row's data to the bom_data dictionary with the row number as the key
         bom_data[i] = row_data
     
+    bom_data_sorted = sortingBOM_dict(bom_data,bytag = 'P&ID TAG' )
     # Return data in JSON-like dictionary format with line numbers as keys
-    return bom_data
+    return bom_data_sorted
 
 # def convert_bom_dxf_to_dataframe(bom_dxf):
 #     """ Convert BOM dictionary from DXF to a pandas DataFrame. """
@@ -199,9 +218,9 @@ def convert_bom_dxf_to_JSON(bom_dxf):
     if not isinstance(bom_dxf, dict):
         raise ValueError("Input must be a dictionary.")
     
-    bom_dxf2 = bom_dxf.copy()
-    for i in bom_dxf2.keys():
-        comp = bom_dxf2[i]
+    bom_dxf2 = {}
+    for i in bom_dxf.keys():
+        comp = bom_dxf[i].copy()
         for key in header_mapping.keys():
             if key in comp.keys():
                 key_new = header_mapping[key]
@@ -213,6 +232,7 @@ def convert_bom_dxf_to_JSON(bom_dxf):
         D = comp['D']
         PID_TAG = str(L)+str(N)+str(D)
         comp.update({'P&ID TAG':PID_TAG,  })
+        bom_dxf2[i] = comp
 
     return bom_dxf2
 
@@ -336,13 +356,14 @@ def convert_bom_dxf_to_JSON(bom_dxf):
 
 
 
-def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM=False):
+def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM=False, flagSaveNewExcellFile=True):
     """Compare two BOMs and print differences. Optionally highlight missing components in red."""
 
     sheet = None
     if (highlight_missing or import_missingDXF2BOM) and revised_excel_file:
         workbook = openpyxl.load_workbook(revised_excel_file)
         sheet = workbook.active
+        
 
     # Filter bom_dxf and bom_revised to include only entries with 'L', 'N', 'D', 'P&ID TAG' present and not empty
     def filter_bom(bom):
@@ -354,6 +375,7 @@ def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highligh
 
     bom_dxf_filtered = filter_bom(bom_dxf)
     bom_revised_filtered = filter_bom(bom_revisedJSON)
+    
 
     # Create sets of 'P&ID TAG's
     bom_dxf_set = set(comp['P&ID TAG'] for comp in bom_dxf_filtered.values())
@@ -373,15 +395,32 @@ def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highligh
         for item in missing_in_dxf:
             print(item)
             # Highlight in the revised Excel file if specified
-            if sheet and highlight_missing:
-                highlight_missing_item_in_excel(item, sheet)
+            # if sheet and highlight_missing:
+            #     highlight_missing_item_in_excel(item, sheet)
 
     # Add missing items from DXF to Excel if requested
     if missing_in_revised and import_missingDXF2BOM and sheet:
         add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_filtered)
+    
+    # sorting
+    sort_rows_by_pid_tag(sheet)
+    
+    # highlight
+    if missing_in_dxf and highlight_missing and  sheet:
+        print("\nHighlighting Components in revised BOM but not in DXF BOM:")
+        for item in missing_in_dxf:
+            highlight_missing_item_in_excel(item, sheet,color = "FF0000")
+    if missing_in_revised and import_missingDXF2BOM and sheet and highlight_missing:
+        print("\nHighlighting Components in DXF but not in the revised BOM:")
+        for item in missing_in_revised:
+            highlight_missing_item_in_excel(item, sheet,color = "CCCCCC") 
 
     if sheet:
-        workbook.save(revised_excel_file)  # Save changes to the Excel file
+        revised_excel_file_out = revised_excel_file
+        if flagSaveNewExcellFile:
+            revised_excel_file_out=os.path.splitext(revised_excel_file)[0] + "_rev.xlsx"
+        
+        workbook.save(revised_excel_file_out)  # Save changes to the Excel file
 
     # Compare attributes of matching components
     print("\nComparing attributes of matching components...")
@@ -398,7 +437,7 @@ def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highligh
 
     return missing_in_revised, missing_in_dxf
 
-def highlight_missing_item_in_excel(item, sheet):
+def highlight_missing_item_in_excel(item, sheet,color = "FF0000"):
     """Highlight the row corresponding to 'item' in the Excel sheet."""
     # Assuming the first row is the header
     pid_tag_col = None
@@ -417,8 +456,10 @@ def highlight_missing_item_in_excel(item, sheet):
         if cell_value == item:
             # Highlight the entire row in red
             for col in range(1, sheet.max_column + 1):
-                sheet.cell(row=row, column=col).fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
+                sheet.cell(row=row, column=col).fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
             break  # Exit after highlighting the row
+
+
 
 def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
     """Add missing items from the DXF BOM to the Excel sheet and highlight them in grey."""
@@ -451,4 +492,52 @@ def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
             sheet.cell(row=row_num, column=col_index).value = value
 
             # Highlight the new row in grey
-            sheet.cell(row=row_num, column=col_index).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            #sheet.cell(row=row_num, column=col_index).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+
+def sort_rows_by_pid_tag(sheet):
+    """Sort rows in the Excel sheet by 'P&ID TAG' column, ignoring empty rows and renumbering the '#' column."""
+    
+    # Find the column index for 'P&ID TAG' and '#' columns
+    pid_tag_col = None
+    num_col = None  # Column for '#'
+    
+    for col in range(1, sheet.max_column + 1):
+        header_value = sheet.cell(row=1, column=col).value
+        if header_value == 'P&ID TAG':
+            pid_tag_col = col
+        elif header_value == '#':
+            num_col = col
+        if pid_tag_col is not None and num_col is not None:
+            break
+    
+    if pid_tag_col is None:
+        print("P&ID TAG column not found in Excel sheet.")
+        return
+
+    if num_col is None:
+        print("'#' column not found in Excel sheet.")
+        return
+
+    # Extract all non-empty rows (excluding the header row)
+    rows = []
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        # Check if the row is fully empty
+        if any(cell is not None and cell != '' for cell in row):
+            rows.append(row)
+
+    # Sort rows based on the 'P&ID TAG' value (using the pid_tag_col - 1 to match zero-based index)
+    sorted_rows = sorted(rows, key=lambda x: (x[pid_tag_col - 1] or '').lower())
+
+    # Clear existing rows (excluding the header)
+    for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row):
+        for cell in row:
+            cell.value = None
+
+    # Write the sorted rows back to the sheet and renumber the '#' column
+    for i, row_data in enumerate(sorted_rows, start=2):
+        for j, value in enumerate(row_data, start=1):
+            # Renumber the '#' column
+            if j == num_col:
+                sheet.cell(row=i, column=j).value = i - 1  # Renumber from 1
+            else:
+                sheet.cell(row=i, column=j).value = value

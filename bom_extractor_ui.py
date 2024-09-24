@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import logging
 # Import the pyPidBoMExtractor package
-from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf, sortingBOM_dict
+from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 import os
 

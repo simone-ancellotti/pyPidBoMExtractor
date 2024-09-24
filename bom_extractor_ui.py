@@ -23,7 +23,7 @@ class BOMExtractorApp(tk.Tk):
         self.bom_dxf = None
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
-        self.flagSaveNewExcellFile = tk.BooleanVar() 
+        self.flagSaveNewExcellFile = tk.BooleanVar(value=True) 
         # UI Setup
         self.setup_ui()
 

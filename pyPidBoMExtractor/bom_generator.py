@@ -72,6 +72,7 @@ def print_bom(bom):
         comp_type = component['TYPE']
         description=component['description']
         if description == None: description=''
+        if comp_type == None: comp_type=''
         print(f"{it:<3}|{L:<4}|{N:<5}|{D:<4}|{pid_TAG:<10}|{comp_type:<30}|{description:<30}")
 
 

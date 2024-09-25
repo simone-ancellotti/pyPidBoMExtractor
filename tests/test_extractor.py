@@ -24,7 +24,7 @@ templates_path = r"../templates/"
 template_BOM_xls_path = os.path.join(templates_path, "BOM_ULIX_template.xlsx")
 output_path = r"xls/BOM_1.xlsx"
 revised_excel_file = r"xls/BOM_1.1.xlsx"
-
+revised_excel_file2 = r"xls/BOM_1.1_updated.xlsx"
 
 
 if __name__ == "__main__":
@@ -60,8 +60,9 @@ if __name__ == "__main__":
         flagSaveNewExcellFile = True
         # Compare BOMs
         #missing_in_revised, missing_in_dxf = compare_boms(bom_df_dxf, bom_revised, revised_excel_file, highlight_missing,import_missingDXF2BOM)
-        missing_in_revised, missing_in_dxf = compare_bomsJSON(bom_dxf_updated_keys, bom_revisedJSON, revised_excel_file, highlight_missing,import_missingDXF2BOM,flagSaveNewExcellFile)
-
+        missing_in_revised, missing_in_dxf, workbook_excel= compare_bomsJSON(bom_dxf_updated_keys, bom_revisedJSON, revised_excel_file, highlight_missing,import_missingDXF2BOM)
+        
+        workbook_excel.save(revised_excel_file2)  # Save changes to the Excel file
     except FileNotFoundError as e:
         logging.error(f"File not found: {e}")
     except Exception as e:

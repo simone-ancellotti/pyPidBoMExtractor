@@ -372,7 +372,7 @@ def convert_bom_dxf_to_JSON(bom_dxf):
 
 
 
-def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM=False, flagSaveNewExcellFile=True):
+def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM=False):
     """Compare two BOMs and print differences. Optionally highlight missing components in red."""
 
     sheet = None
@@ -431,12 +431,12 @@ def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highligh
         for item in missing_in_revised:
             highlight_missing_item_in_excel(item, sheet,color = "CCCCCC") 
 
-    if sheet:
-        revised_excel_file_out = revised_excel_file
-        if flagSaveNewExcellFile:
-            revised_excel_file_out=os.path.splitext(revised_excel_file)[0] + "_rev.xlsx"
+    # if sheet:
+    #     revised_excel_file_out = revised_excel_file
+    #     if flagSaveNewExcellFile:
+    #         revised_excel_file_out=os.path.splitext(revised_excel_file)[0] + "_rev.xlsx"
         
-        workbook.save(revised_excel_file_out)  # Save changes to the Excel file
+    #     workbook.save(revised_excel_file_out)  # Save changes to the Excel file
 
     # Compare attributes of matching components
     print("\nComparing attributes of matching components...")
@@ -451,7 +451,7 @@ def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highligh
             if dxf_value != revised_value:
                 print(f"Component {tag}: {column} differs. DXF: {dxf_value}, Revised: {revised_value}")
 
-    return missing_in_revised, missing_in_dxf
+    return missing_in_revised, missing_in_dxf,workbook
 
 def highlight_missing_item_in_excel(item, sheet,color = "FF0000"):
     """Highlight the row corresponding to 'item' in the Excel sheet."""

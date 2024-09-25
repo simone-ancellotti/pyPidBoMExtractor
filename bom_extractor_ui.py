@@ -44,9 +44,16 @@ class BOMExtractorApp(tk.Tk):
         self.template_label = tk.Label(self, text="No Template Excel uploaded")
         self.template_label.grid(row=1, column=1, padx=20, pady=5, sticky='e')
 
-        # Extract BOM Button (Center)
-        self.extract_button = tk.Button(self, text="Extract BOM to Excel", state=tk.DISABLED, command=self.extract_bom)
-        self.extract_button.grid(row=2, column=0, columnspan=2, padx=20, pady=20)
+        # # Extract BOM Button (Center)
+        # self.extract_button = tk.Button(self, text="Extract BOM to Excel", state=tk.DISABLED, command=self.extract_bom)
+        # self.extract_button.grid(row=2, column=0, columnspan=2, padx=20, pady=20)
+        # Extract BOM Button
+        self.extract_button = tk.Button(self, text="Extract BOM from DXF", state=tk.DISABLED, command=self.extract_bom)
+        self.extract_button.grid(row=2, column=0, columnspan=2, padx=20, pady=10,  sticky='w') 
+        
+        # Export BOM to Excel Button (initially disabled)
+        self.export_button = tk.Button(self, text="Export to Excel", state=tk.DISABLED, command=self.export_to_excel)
+        self.export_button.grid(row=2, column=1, columnspan=2, padx=20, pady=10,  sticky='e')
 
         # Upload Revised Excel Button and Label (Center)
         self.revised_button = tk.Button(self, text="Upload Revised BOM Excel", command=self.upload_revised_bom)
@@ -72,20 +79,19 @@ class BOMExtractorApp(tk.Tk):
         self.compare_button.grid(row=6, column=0, columnspan=2, padx=20, pady=20)
 
     def upload_dxf(self):
-        # Open file dialog to select a DXF file
         self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
         if self.dwg_file:
-            logging.info(f"Uploaded DXF file: {self.dwg_file}")
             self.dxf_label.config(text=os.path.basename(self.dwg_file))
-            self.check_ready_to_extract()
+            logging.info(f"Uploaded DXF file: {self.dwg_file}")
+            self.extract_button.config(state=tk.NORMAL)
 
     def upload_template(self):
-        # Open file dialog to select a template Excel file
         self.template_BOM_xls_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
         if self.template_BOM_xls_path:
-            logging.info(f"Uploaded Excel template: {self.template_BOM_xls_path}")
             self.template_label.config(text=os.path.basename(self.template_BOM_xls_path))
-            self.check_ready_to_extract()
+            logging.info(f"Uploaded Excel template: {self.template_BOM_xls_path}")
+            if self.bom_dxf:
+                self.export_button.config(state=tk.NORMAL)
 
     def upload_revised_bom(self):
         # Open file dialog to select a revised BOM Excel file
@@ -101,17 +107,46 @@ class BOMExtractorApp(tk.Tk):
             self.extract_button.config(state=tk.NORMAL)
 
     def extract_bom(self):
-        try:
-            logging.info("Extracting BOM from DXF...")
-            self.bom_dxf = extract_bom_from_dxf(self.dwg_file)
-            
-            output_path = os.path.splitext(self.dwg_file)[0] + "_bom.xlsx"
-            export_bom_to_excel(self.bom_dxf, self.template_BOM_xls_path, output_path)
-            messagebox.showinfo("Success", f"BOM successfully exported to {output_path}")
-        except Exception as e:
-            logging.error(f"An error occurred during BOM extraction: {e}")
-            messagebox.showerror("Error", f"Failed to extract BOM: {e}")
+           if not self.dwg_file:
+               messagebox.showerror("Error", "Please upload a DXF file first.")
+               return
+        
+           logging.info("Extracting BOM from DXF...")
+           self.bom_dxf = extract_bom_from_dxf(self.dwg_file)
+        
+           # Enable the Export button once BOM is extracted
+           self.export_button.config(state=tk.NORMAL)
 
+    def export_to_excel(self):
+        if not self.bom_dxf:
+            messagebox.showerror("Error", "Please extract the BOM first.")
+            return
+    
+        if not self.template_BOM_xls_path:
+            messagebox.showerror("Error", "Please upload an Excel template first.")
+            return
+    
+        # Default file name
+        excel_from_dxf_name = os.path.basename(self.dwg_file)
+        default_filename = os.path.splitext(excel_from_dxf_name)[0] + "_bom.xlsx"
+    
+        # Open the "Save As" dialog
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            initialfile=default_filename,
+            title="Save BOM as"
+        )
+    
+        if output_path:
+            try:
+                export_bom_to_excel(self.bom_dxf, self.template_BOM_xls_path, output_path)
+                messagebox.showinfo("Success", f"BOM successfully exported to {output_path}")
+            except Exception as e:
+                logging.error(f"Failed to export BOM: {e}")
+                messagebox.showerror("Error", f"Failed to export BOM: {e}")
+
+    
     def compare_bom(self):
         try:
             logging.info("Comparing BOM with DXF...")
@@ -119,31 +154,63 @@ class BOMExtractorApp(tk.Tk):
                 logging.error("BOM has not been extracted yet.")
                 messagebox.showerror("Error", "BOM must be extracted before comparison.")
                 return
-
-            # Load the revised Excel file as a DataFrame
-            # bom_revised = load_bom_from_excel(self.revised_excel_file)
+    
+            # Load the revised Excel file as JSON
             bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
-
-            # Convert BOM from DXF to DataFrame
-            #bom_df_dxf = convert_bom_dxf_to_dataframe(self.bom_dxf)
-            bom_dxf     = convert_bom_dxf_to_JSON(self.bom_dxf)
-
+    
+            # Convert BOM from DXF to JSON
+            bom_dxf = convert_bom_dxf_to_JSON(self.bom_dxf)
+    
             # Check if the user wants to highlight missing components
             highlight_missing = self.highlight_missing.get()
             
             # Check if the user wants to import missing items from DXF to Excel
             import_missingDXF2BOM = self.import_missing.get()
             flagSaveNewExcellFile = self.flagSaveNewExcellFile.get()
+    
+            # If the "Save As New" checkbox is ticked, prompt for a new file name
 
+            output_path = self.revised_excel_file
+            
+            # Check if the directory exists; if not, create it
+            output_dir = os.path.dirname(output_path)
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+                logging.info(f"Created directory: {output_dir}")
+    
             # Perform BOM comparison
-            # missing_in_revised, missing_in_dxf = compare_boms(bom_df_dxf, bom_revised, self.revised_excel_file, highlight_missing, import_missingDXF2BOM)
-            missing_in_revised, missing_in_dxf = compare_bomsJSON(bom_dxf, bom_revisedJSON, self.revised_excel_file, highlight_missing,import_missingDXF2BOM,flagSaveNewExcellFile)
+            missing_in_revised, missing_in_dxf, workbook_excel = compare_bomsJSON(
+                bom_dxf,
+                bom_revisedJSON,
+                revised_excel_file=output_path,  # Save to the selected path
+                highlight_missing=highlight_missing,
+                import_missingDXF2BOM=import_missingDXF2BOM
+            )
             
             # Display comparison results
             messagebox.showinfo("Comparison Results", f"Missing in Revised: {missing_in_revised}\nMissing in DXF: {missing_in_dxf}")
+
+            if flagSaveNewExcellFile:
+                rev_excel_file_name = os.path.basename(self.revised_excel_file)
+                default_filename = os.path.splitext(rev_excel_file_name)[0] + "_updated.xlsx"
+                output_path = filedialog.asksaveasfilename(
+                    defaultextension=".xlsx",
+                    filetypes=[("Excel files", "*.xlsx")],
+                    initialfile=default_filename,
+                    title="Save updated BOM as"
+                )
+                workbook_excel.save(output_path)  # Save changes to the Excel file
+                if not output_path:
+                    messagebox.showerror("Error", "No file selected for saving the updated BOM.")
+                    return
+            else:
+                workbook_excel.save(output_path)  # Save changes to the Excel file
+                
+           
         except Exception as e:
             logging.error(f"An error occurred during BOM comparison: {e}")
             messagebox.showerror("Error", f"Failed to compare BOM: {e}")
+
 
 if __name__ == "__main__":
     app = BOMExtractorApp()

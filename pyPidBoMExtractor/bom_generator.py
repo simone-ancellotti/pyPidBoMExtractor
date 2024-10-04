@@ -15,6 +15,18 @@ header_mapping = {
         'connection_type':'C type'
     }
 
+
+
+def filterBOM_Ignore(bom,tagToIgnore,valuesToIgnore):
+    bom_filtered=bom.copy()
+    for key in bom.keys():
+        component = bom[key]
+        tagKey = component.get(tagToIgnore)
+        if tagKey:
+            if (component[tagToIgnore] in valuesToIgnore):
+                del bom_filtered[key]
+    return bom_filtered
+                
 def stripField(field):
     if isinstance(field, str):
         field = field.strip() or None
@@ -164,6 +176,7 @@ def extract_bom_from_dxf(dwg_file):
     
     # filter only the blocks stickers TAGs to determine the components in BOM
     bom, blocks_notValid = generate_bom(components)
+    #print(bom)
     # Print the formatted BOM with dimensions
     print_bom(bom)
     return bom

@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import logging
 # Import the pyPidBoMExtractor package
-from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf
+from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 import os
 
@@ -27,6 +27,7 @@ class BOMExtractorApp(tk.Tk):
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
         self.flagSaveNewExcellFile = tk.BooleanVar(value=True) 
+        self.flagIgnoreWETEFE = tk.BooleanVar(value=False)
         # UI Setup
         self.setup_ui()
 
@@ -46,40 +47,44 @@ class BOMExtractorApp(tk.Tk):
 
         self.template_label = tk.Label(self, text="No Template Excel uploaded")
         self.template_label.grid(row=1, column=1, padx=20, pady=5, sticky='e')
+        
+        # Checkbox to select whether to import missing DXF items into Excel (Center)
+        self.import_checkbox = tk.Checkbutton(self, text="Ignore WE TE FE", variable=self.flagIgnoreWETEFE)
+        self.import_checkbox.grid(row=2, column=0, padx=20, pady=10, sticky='e')
 
         # # Extract BOM Button (Center)
         # self.extract_button = tk.Button(self, text="Extract BOM to Excel", state=tk.DISABLED, command=self.extract_bom)
         # self.extract_button.grid(row=2, column=0, columnspan=2, padx=20, pady=20)
         # Extract BOM Button
         self.extract_button = tk.Button(self, text="Extract BOM from DXF", state=tk.DISABLED, command=self.extract_bom)
-        self.extract_button.grid(row=2, column=0, columnspan=2, padx=20, pady=10,  sticky='w') 
+        self.extract_button.grid(row=3, column=0, columnspan=2, padx=20, pady=10,  sticky='w') 
         
         # Export BOM to Excel Button (initially disabled)
         self.export_button = tk.Button(self, text="Export to Excel", state=tk.DISABLED, command=self.export_to_excel)
-        self.export_button.grid(row=2, column=1, columnspan=2, padx=20, pady=10,  sticky='e')
+        self.export_button.grid(row=3, column=1, columnspan=2, padx=20, pady=10,  sticky='e')
 
         # Upload Revised Excel Button and Label (Center)
         self.revised_button = tk.Button(self, text="Upload Revised BOM Excel", command=self.upload_revised_bom)
-        self.revised_button.grid(row=3, column=0, padx=20, pady=10, sticky='w')
+        self.revised_button.grid(row=4, column=0, padx=20, pady=10, sticky='w')
 
         self.revised_label = tk.Label(self, text="No Revised BOM uploaded")
-        self.revised_label.grid(row=4, column=0, padx=20, pady=10, sticky='w')
+        self.revised_label.grid(row=5, column=0, padx=20, pady=10, sticky='w')
 
         # Checkbox to select whether to highlight missing components (Center)
         self.highlight_checkbox = tk.Checkbutton(self, text="Highlight missing components in red", variable=self.highlight_missing)
-        self.highlight_checkbox.grid(row=3, column=1, padx=20, pady=10, sticky='e')
+        self.highlight_checkbox.grid(row=4, column=1, padx=20, pady=10, sticky='e')
 
         # Checkbox to select whether to import missing DXF items into Excel (Center)
         self.import_checkbox = tk.Checkbutton(self, text="Import missing DXF items to Excel", variable=self.import_missing)
-        self.import_checkbox.grid(row=4, column=1, padx=20, pady=10, sticky='e')
+        self.import_checkbox.grid(row=5, column=1, padx=20, pady=10, sticky='e')
         
         # Checkbox to select whether save new file or modifiy exisiting file
         self.import_checkbox = tk.Checkbutton(self, text="Save as new updated excell File", variable=self.flagSaveNewExcellFile)
-        self.import_checkbox.grid(row=5, column=1, padx=20, pady=10, sticky='e')
+        self.import_checkbox.grid(row=6, column=1, padx=20, pady=10, sticky='e')
 
         # Button to Compare BOM (Bottom-Center)
         self.compare_button = tk.Button(self, text="Compare BOM vs DXF", state=tk.DISABLED, command=self.compare_bom)
-        self.compare_button.grid(row=6, column=0, columnspan=2, padx=20, pady=20)
+        self.compare_button.grid(row=7, column=0, columnspan=2, padx=20, pady=20)
 
     def upload_dxf(self):
         self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
@@ -116,7 +121,14 @@ class BOMExtractorApp(tk.Tk):
         
            logging.info("Extracting BOM from DXF...")
            self.bom_dxf = extract_bom_from_dxf(self.dwg_file)
-        
+           
+           if self.flagIgnoreWETEFE.get():
+               tagsvaluesToIgnore = ['WE', 'TE', 'FE']
+               print('filtering '+str(tagsvaluesToIgnore))
+               tagToIgnore='targetObjectType'
+               bom_filtered = filterBOM_Ignore(self.bom_dxf,tagToIgnore,tagsvaluesToIgnore)
+               self.bom_dxf = bom_filtered
+           
            # Enable the Export button once BOM is extracted
            self.export_button.config(state=tk.NORMAL)
 

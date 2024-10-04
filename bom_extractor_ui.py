@@ -6,6 +6,9 @@ from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_fro
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 import os
 
+# pyinstaller --onefile --noconsole --strip --exclude-module=numpy bom_extractor_ui.py
+
+
 # Configure logging to display in terminal
 logging.basicConfig(level=logging.INFO)
 

@@ -318,7 +318,12 @@ def parse_tag_code(tag_code):
         
         return target_object_type, target_object_loop_number, target_object_type_2nd
     else:
-        raise ValueError(f"Invalid tag code format: {tag_code}")
+        #raise ValueError(f"Invalid tag code format: {tag_code}")
+        print(f"Warning: Invalid tag code format: {tag_code}")
+        target_object_type = tag_code
+        target_object_loop_number = None
+        target_object_type_2nd = None
+        return target_object_type, target_object_loop_number, target_object_type_2nd
         
 def getTagCode(block):
     targetObjectType = ''
@@ -326,6 +331,10 @@ def getTagCode(block):
     
     
     if isTagBlock(block):
+        targetObjectExtracted={'targetObjectType':None,
+                               'targetObjectLoopNumber':None,
+                               'targetObjectType2nd':None,
+                               }
         attributes = block['attributes']
         
         # Define the search keys
@@ -345,17 +354,36 @@ def getTagCode(block):
         targetObjectType = attributes_lower.get(key_TargetObjectType_lower)
         targetObjectLoopNumber = attributes_lower.get(key_TargetObjectLoopNumber_lower)
         targetObjectType2nd = ''
-        if targetObjectType and targetObjectLoopNumber:
+        
+        if targetObjectType=='': targetObjectType = None
+        if targetObjectLoopNumber=='': targetObjectLoopNumber = None
+        
+        if targetObjectType or targetObjectLoopNumber:
+            targetObjectExtracted.update({
+                'targetObjectType':targetObjectType,
+                'targetObjectLoopNumber':targetObjectLoopNumber,
+                'targetObjectType2nd':targetObjectType2nd,
+                })
             # Both were found, return them
-            return targetObjectType, targetObjectLoopNumber,targetObjectType2nd
+            return targetObjectExtracted
         else:
             # Try to find the tag instead
             targetObjectTag = attributes_lower.get(key_TargetObjectTag_lower)
             if targetObjectTag:
                 # Parse the tag to get type and loop number
-                return parse_tag_code(targetObjectTag)
+                # if 'G' == targetObjectTag:
+                #     print(block)
+                targetObjectType, targetObjectLoopNumber, targetObjectType2nd = parse_tag_code(targetObjectTag)
+                targetObjectExtracted.update({
+                    'targetObjectType':targetObjectType,
+                    'targetObjectLoopNumber':targetObjectLoopNumber,
+                    'targetObjectType2nd':targetObjectType2nd,
+                    })
+                return targetObjectExtracted
             else:
-                raise ValueError(f"The provided block '{block['block_name']}' is missing TagObjects.")
+                print(f"Warning: The provided block '{block['block_name']}' is missing TagObjects.")
+                return None
+                #raise ValueError(f"The provided block '{block['block_name']}' is missing TagObjects.")
     
     else:
         raise ValueError("The provided block is not a TagBlock.")

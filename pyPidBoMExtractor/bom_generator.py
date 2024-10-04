@@ -15,10 +15,16 @@ header_mapping = {
         'connection_type':'C type'
     }
 
+def stripField(field):
+    if isinstance(field, str):
+        field = field.strip() or None
+    return field
+
 def generate_bom(components):
     # feel free to change the logic
     tagBlocks = [c for c in components if isTagBlock(c)]
     bom = {}
+    blocks_notValid = {}
     i=-1
     for component in tagBlocks:
         i+=1
@@ -27,37 +33,49 @@ def generate_bom(components):
         attributes = component['attributes']
         #contains_circle = component['contains_circle']
         
-        def stripField(field):
-            if isinstance(field, str):
-                field = field.strip() or None
-            return field
-        
-        targetObjectType, targetObjectLoopNumber, targetObjectType2nd = getTagCode(component)     
-        typeTag,distance,near_block_found = findTypeBlockFromTag(component,components)
-        description = stripField(  attributes.get('DESCRIPTION') ) 
-        connection_type = stripField( attributes.get('CONNECTIONTYPE') )
-        
-        
-        if near_block_found:
-            attributes_near_block_found = near_block_found.get('attributes')
-            if attributes_near_block_found:
-                if not(description):
-                    description = attributes_near_block_found.get('DESCRIPTION')
-                if not(connection_type):
-                    connection_type = attributes_near_block_found.get('CONNECTIONTYPE')
+        #print(component)
+        # extraction of Tags
+        targetObjectExtracted = getTagCode(component)
+        if targetObjectExtracted:
+            targetObjectType        = targetObjectExtracted.get('targetObjectType')
+            targetObjectLoopNumber  = targetObjectExtracted.get('targetObjectLoopNumber')
+            targetObjectType2nd     = targetObjectExtracted.get('targetObjectType2nd')
             
-        
-        bom.update( {number:{
-                "count":number,
-                'targetObjectType':targetObjectType,
-                'targetObjectLoopNumber':targetObjectLoopNumber,
-                'targetObjectType2nd':targetObjectType2nd,
-                'P&ID TAG': str(targetObjectType)+str(targetObjectLoopNumber)+str(targetObjectType2nd),
-                'TYPE':typeTag,
-                'description':description,
-                'connection_type':connection_type
-                }})
-    return bom
+            
+            if targetObjectType and targetObjectLoopNumber:
+                typeTag,distance,near_block_found = findTypeBlockFromTag(component,components)
+                description = stripField(  attributes.get('DESCRIPTION') ) 
+                connection_type = stripField( attributes.get('CONNECTIONTYPE') )
+                
+                
+                if near_block_found:
+                    attributes_near_block_found = near_block_found.get('attributes')
+                    if attributes_near_block_found:
+                        if not(description):
+                            description = attributes_near_block_found.get('DESCRIPTION')
+                        if not(connection_type):
+                            connection_type = attributes_near_block_found.get('CONNECTIONTYPE')
+                    
+                new_component_coded = {
+                        "count":number,
+                        'targetObjectType':targetObjectType,
+                        'targetObjectLoopNumber':targetObjectLoopNumber,
+                        'targetObjectType2nd':targetObjectType2nd,
+                        'P&ID TAG': str(targetObjectType)+str(targetObjectLoopNumber)+str(targetObjectType2nd),
+                        'TYPE':typeTag,
+                        'description':description,
+                        'connection_type':connection_type,
+                        'insert_point': component.get('insert_point'),
+                        'dimensions': component.get('dimensions'),
+                        }
+                bom.update( {number:new_component_coded})
+            else:
+                block_name = component['block_name']
+                print(f"Warning: Block {block_name} not Valid")
+                blocks_notValid.update({number:component})
+
+                
+    return bom, blocks_notValid
 
 def print_bom(bom):
     print("\nGenerated BOM:\n")
@@ -145,7 +163,7 @@ def extract_bom_from_dxf(dwg_file):
     components = extract_blocks_with_attributes_and_dimensions(dwg_file)
     
     # filter only the blocks stickers TAGs to determine the components in BOM
-    bom = generate_bom(components)
+    bom, blocks_notValid = generate_bom(components)
     # Print the formatted BOM with dimensions
     print_bom(bom)
     return bom

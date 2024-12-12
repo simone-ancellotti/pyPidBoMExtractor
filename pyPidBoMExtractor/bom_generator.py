@@ -404,9 +404,25 @@ def convert_bom_dxf_to_JSON(bom_dxf):
 
 
 
-def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highlight_missing=False, import_missingDXF2BOM=False):
-    """Compare two BOMs and print differences. Optionally highlight missing components in red."""
+def compare_bomsJSON(
+    bom_dxf, 
+    bom_revisedJSON, 
+    revised_excel_file=None, 
+    highlight_duplicate=False, 
+    highlight_missing=False, 
+    import_missingDXF2BOM=False
+    ):
+    """
+    Compares two BOMs and optionally highlights duplicates and missing components.
 
+    Args:
+        bom_dxf: BOM extracted from the DXF file.
+        bom_revisedJSON: Revised BOM in JSON format.
+        revised_excel_file: Path to the revised Excel file (optional).
+        highlight_duplicate: Flag to trigger highlighting of duplicate P&ID tags.
+        highlight_missing: Flag to trigger highlighting of missing components.
+        import_missingDXF2BOM: Flag to trigger import of missing components.
+    """
     sheet = None
     if (highlight_missing or import_missingDXF2BOM) and revised_excel_file:
         workbook = openpyxl.load_workbook(revised_excel_file)
@@ -463,6 +479,11 @@ def compare_bomsJSON(bom_dxf, bom_revisedJSON, revised_excel_file=None, highligh
         for item in missing_in_revised:
             highlight_missing_item_in_excel(item, sheet,color = "CCCCCC") 
 
+   # Trigger duplicate highlighting if the flag is true
+    if highlight_duplicate and revised_excel_file:
+        print("\nHighlighting Duplicate 'P&ID TAG' Values in Purple:")
+        highlight_duplicate_tags_in_excel(sheet, 'P&ID TAG', color="800080")  # Purple
+        
     # if sheet:
     #     revised_excel_file_out = revised_excel_file
     #     if flagSaveNewExcellFile:
@@ -508,7 +529,45 @@ def highlight_missing_item_in_excel(item, sheet,color = "FF0000"):
             break  # Exit after highlighting the row
 
 
+def highlight_duplicate_tags_in_excel(sheet, column_name, color="800080"):
+    """
+    Highlights cells in the given column with duplicate values.
 
+    Args:
+        sheet: The Excel sheet object.
+        column_name: The name of the column to check for duplicates (e.g., 'P&ID TAG').
+        color: The color code for highlighting duplicates (default: Purple '800080').
+    """
+    column_index = None
+    header_row = list(sheet[1])  # Assuming the first row contains headers
+    
+    # Find the column index for the specified column name
+    for idx, cell in enumerate(header_row, start=1):
+        if cell.value == column_name:
+            column_index = idx
+            break
+
+    if column_index is None:
+        print(f"Column '{column_name}' not found in the sheet.")
+        return
+
+    # Track duplicates
+    tag_counts = {}
+    for row in sheet.iter_rows(min_row=2, min_col=column_index, max_col=column_index):
+        tag_value = row[0].value
+        if tag_value:
+            if tag_value in tag_counts:
+                tag_counts[tag_value].append(row[0])
+            else:
+                tag_counts[tag_value] = [row[0]]
+
+    # Highlight duplicates
+    for tag, cells in tag_counts.items():
+        if len(cells) > 1:  # Only highlight if more than one occurrence
+            for cell in cells:
+                cell.fill = openpyxl.styles.PatternFill(start_color=color, end_color=color, fill_type="solid")
+                print(f"Highlighted duplicate tag '{tag}' in cell {cell.coordinate}.")
+                
 def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
     """Add missing items from the DXF BOM to the Excel sheet and highlight them in grey."""
     # Create a mapping of column headers to their indices

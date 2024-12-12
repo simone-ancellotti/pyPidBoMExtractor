@@ -3,7 +3,9 @@ from ezdxf.math import BoundingBox, Vec3
 import re
 import math
 
-listTagBlockNames = ('Tag_block','Ball_Tag',
+listTagBlockNames = ('Tag_block','Ball_Tag','Ball_Tag2',
+                     'DisplayControl0_Tag','DisplayControl1_Tag','DisplayControl2_Tag',
+                     'LogicControl0_Tag','LogicControl1_Tag','LogicControl2_Tag',
                      'STICKER Moving Machine', 'STICKER Equipment Name',
                      'Tag_Instrument')
 

@@ -26,6 +26,7 @@ class BOMExtractorApp(tk.Tk):
         self.bom_dxf = None
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
+        self.highlight_duplicate = tk.BooleanVar()  # Variable for highlight duplicate
         self.flagSaveNewExcellFile = tk.BooleanVar(value=True) 
         self.flagIgnoreWETEFE = tk.BooleanVar(value=False)
         # UI Setup
@@ -78,13 +79,16 @@ class BOMExtractorApp(tk.Tk):
         self.import_checkbox = tk.Checkbutton(self, text="Import missing DXF items to Excel", variable=self.import_missing)
         self.import_checkbox.grid(row=5, column=1, padx=20, pady=10, sticky='e')
         
+        self.import_checkbox = tk.Checkbutton(self, text="Highlight duplicated items in Excel", variable=self.highlight_duplicate)
+        self.import_checkbox.grid(row=6, column=1, padx=20, pady=10, sticky='e')
+        
         # Checkbox to select whether save new file or modifiy exisiting file
         self.import_checkbox = tk.Checkbutton(self, text="Save as new updated excell File", variable=self.flagSaveNewExcellFile)
-        self.import_checkbox.grid(row=6, column=1, padx=20, pady=10, sticky='e')
+        self.import_checkbox.grid(row=7, column=1, padx=20, pady=10, sticky='e')
 
         # Button to Compare BOM (Bottom-Center)
         self.compare_button = tk.Button(self, text="Compare BOM vs DXF", state=tk.DISABLED, command=self.compare_bom)
-        self.compare_button.grid(row=7, column=0, columnspan=2, padx=20, pady=20)
+        self.compare_button.grid(row=8, column=0, columnspan=2, padx=20, pady=20)
 
     def upload_dxf(self):
         self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
@@ -181,6 +185,10 @@ class BOMExtractorApp(tk.Tk):
             
             # Check if the user wants to import missing items from DXF to Excel
             import_missingDXF2BOM = self.import_missing.get()
+            
+            # Check if the user wants to highlight duplicate components
+            highlight_duplicate = self.highlight_duplicate.get()
+            
             flagSaveNewExcellFile = self.flagSaveNewExcellFile.get()
     
             # If the "Save As New" checkbox is ticked, prompt for a new file name
@@ -198,6 +206,7 @@ class BOMExtractorApp(tk.Tk):
                 bom_dxf,
                 bom_revisedJSON,
                 revised_excel_file=output_path,  # Save to the selected path
+                highlight_duplicate=highlight_duplicate, 
                 highlight_missing=highlight_missing,
                 import_missingDXF2BOM=import_missingDXF2BOM
             )

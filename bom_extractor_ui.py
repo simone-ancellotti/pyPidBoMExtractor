@@ -5,6 +5,7 @@ import logging
 from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 import os
+import json
 
 # pyinstaller --onefile --noconsole --strip --exclude-module=numpy bom_extractor_ui.py
 
@@ -26,12 +27,101 @@ class BOMExtractorApp(tk.Tk):
         self.bom_dxf = None
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
-        self.highlight_duplicate = tk.BooleanVar()  # Variable for highlight duplicate
+        self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
         self.flagSaveNewExcellFile = tk.BooleanVar(value=True) 
         self.flagIgnoreWETEFE = tk.BooleanVar(value=False)
         # UI Setup
         self.setup_ui()
+        self.create_menu() 
 
+    def create_menu(self):
+        # Create the menu bar
+        menubar = tk.Menu(self)
+
+        # File menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Load settings", command=self.load_settings)
+        file_menu.add_command(label="Save settings", command=self.save_settings)
+        file_menu.add_separator()
+        file_menu.add_command(label="Exit", command=self.quit)
+        menubar.add_cascade(label="File", menu=file_menu)
+        
+        # You can add other menus (e.g., Help, About) as needed
+        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(label="About", command=self.show_about)  # Define show_about if desired
+        menubar.add_cascade(label="Help", menu=help_menu)
+        
+        self.config(menu=menubar)
+        
+    def show_about(self):
+        # Show an About dialog with version information
+        about_text = "pyPidBoMExtractor Version 1.0\nDeveloped by Simone Ancellotti\n© 2025"
+        messagebox.showinfo("About", about_text)
+
+    def save_settings(self):
+        """Save the current settings to a JSON file."""
+        settings = {
+            "dwg_file": self.dwg_file,
+            "template_BOM_xls_path": self.template_BOM_xls_path,
+            "revised_excel_file": self.revised_excel_file,
+            "bom_dxf": self.bom_dxf,  # If this is serializable (consider omitting if large)
+            "highlight_missing": self.highlight_missing.get(),
+            "import_missing": self.import_missing.get(),
+            "highlight_duplicate": self.highlight_duplicate.get(),
+            "flagSaveNewExcellFile": self.flagSaveNewExcellFile.get(),
+            "flagIgnoreWETEFE": self.flagIgnoreWETEFE.get()
+        }
+        
+        file = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json")],
+            title="Save Settings As"
+        )
+        if file:
+            try:
+                with open(file, "w") as f:
+                    json.dump(settings, f, indent=4)
+                messagebox.showinfo("Settings Saved", "Settings have been successfully saved.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save settings: {e}")
+
+    def load_settings(self):
+        """Load settings from a JSON file and update the UI variables."""
+        file = filedialog.askopenfilename(
+            filetypes=[("JSON files", "*.json")],
+            title="Load Settings"
+        )
+        if file:
+            try:
+                with open(file, "r") as f:
+                    settings = json.load(f)
+                
+                # Update settings variables
+                self.dwg_file = settings.get("dwg_file")
+                self.template_BOM_xls_path = settings.get("template_BOM_xls_path")
+                self.revised_excel_file = settings.get("revised_excel_file")
+                self.bom_dxf = settings.get("bom_dxf")
+                self.highlight_missing.set(settings.get("highlight_missing", False))
+                self.import_missing.set(settings.get("import_missing", False))
+                self.highlight_duplicate.set(settings.get("highlight_duplicate", False))
+                self.flagSaveNewExcellFile.set(settings.get("flagSaveNewExcellFile", True))
+                self.flagIgnoreWETEFE.set(settings.get("flagIgnoreWETEFE", False))
+                
+                # Optionally, update your UI labels to reflect loaded file paths:
+                if self.dwg_file:
+                    self.dxf_label.config(text=os.path.basename(self.dwg_file))
+                if self.template_BOM_xls_path:
+                    self.template_label.config(text=os.path.basename(self.template_BOM_xls_path))
+                if self.revised_excel_file:
+                    self.revised_label.config(text=os.path.basename(self.revised_excel_file))
+                    
+                self.check_ready_to_exportBOM1()
+                self.check_ready_to_extract()
+                    
+                messagebox.showinfo("Settings Loaded", "Settings have been successfully loaded.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load settings: {e}")
+        
     def setup_ui(self):
         # Use a grid layout for better positioning
 
@@ -90,20 +180,28 @@ class BOMExtractorApp(tk.Tk):
         self.compare_button = tk.Button(self, text="Compare BOM vs DXF", state=tk.DISABLED, command=self.compare_bom)
         self.compare_button.grid(row=8, column=0, columnspan=2, padx=20, pady=20)
 
+            
+    # def upload_dxf(self):
+    #     self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
+    #     if self.dwg_file:
+    #         self.dxf_label.config(text=os.path.basename(self.dwg_file))
+    #         logging.info(f"Uploaded DXF file: {self.dwg_file}")
+    #         self.extract_button.config(state=tk.NORMAL)
     def upload_dxf(self):
         self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
         if self.dwg_file:
             self.dxf_label.config(text=os.path.basename(self.dwg_file))
             logging.info(f"Uploaded DXF file: {self.dwg_file}")
-            self.extract_button.config(state=tk.NORMAL)
-
+        self.check_ready_to_extract()
+        
     def upload_template(self):
         self.template_BOM_xls_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
         if self.template_BOM_xls_path:
             self.template_label.config(text=os.path.basename(self.template_BOM_xls_path))
             logging.info(f"Uploaded Excel template: {self.template_BOM_xls_path}")
             if self.bom_dxf:
-                self.export_button.config(state=tk.NORMAL)
+                #self.export_button.config(state=tk.NORMAL)
+                self.check_ready_to_exportBOM1()
 
     def upload_revised_bom(self):
         # Open file dialog to select a revised BOM Excel file
@@ -115,8 +213,19 @@ class BOMExtractorApp(tk.Tk):
 
     def check_ready_to_extract(self):
         # Enable "Extract BOM" button if both DXF and Template Excel are uploaded
-        if self.dwg_file and self.template_BOM_xls_path:
+        """Enable the extract button if a valid DXF file is available."""
+        if self.dwg_file and os.path.exists(self.dwg_file):
             self.extract_button.config(state=tk.NORMAL)
+        else:
+            self.extract_button.config(state=tk.DISABLED)
+
+    def check_ready_to_exportBOM1(self):
+        # Enable "Extract BOM" button if both DXF and Template Excel are uploaded
+        """Enable the extract button if a valid DXF file is available."""
+        if self.bom_dxf and self.dwg_file and os.path.exists(self.dwg_file) and self.template_BOM_xls_path and os.path.exists(self.template_BOM_xls_path):
+            self.extract_button.config(state=tk.NORMAL)
+        else:
+            self.extract_button.config(state=tk.DISABLED)
 
     def extract_bom(self):
            if not self.dwg_file:

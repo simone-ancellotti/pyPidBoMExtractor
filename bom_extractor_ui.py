@@ -17,7 +17,7 @@ class BOMExtractorApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("BOM Extractor Application")
-        self.geometry("600x400")  # Adjusted window size for better layout
+        self.geometry("600x440")  # Adjusted window size for better layout
 
         # Variables to hold file paths and options
         self.dwg_file = None
@@ -71,15 +71,15 @@ class BOMExtractorApp(tk.Tk):
         self.revised_label = tk.Label(self, text="No Revised BOM uploaded")
         self.revised_label.grid(row=5, column=0, padx=20, pady=10, sticky='w')
 
-        # Checkbox to select whether to highlight missing components (Center)
-        self.highlight_checkbox = tk.Checkbutton(self, text="Highlight missing components in red", variable=self.highlight_missing)
+        # Checkbox to select whether to highlight missing components (Center) 
+        self.highlight_checkbox = tk.Checkbutton(self, text="Highlight in RED comp. in revised BOM but not in DXF", variable=self.highlight_missing)
         self.highlight_checkbox.grid(row=4, column=1, padx=20, pady=10, sticky='e')
 
         # Checkbox to select whether to import missing DXF items into Excel (Center)
-        self.import_checkbox = tk.Checkbutton(self, text="Import missing DXF items to Excel", variable=self.import_missing)
+        self.import_checkbox = tk.Checkbutton(self, text="Import DXF items, which are missing in revised BOM,\n into new Excel. Highlight in GREY", variable=self.import_missing)
         self.import_checkbox.grid(row=5, column=1, padx=20, pady=10, sticky='e')
         
-        self.import_checkbox = tk.Checkbutton(self, text="Highlight duplicated items in Excel", variable=self.highlight_duplicate)
+        self.import_checkbox = tk.Checkbutton(self, text="Highlight in PURPLE duplicated items in Excel", variable=self.highlight_duplicate)
         self.import_checkbox.grid(row=6, column=1, padx=20, pady=10, sticky='e')
         
         # Checkbox to select whether save new file or modifiy exisiting file
@@ -159,7 +159,9 @@ class BOMExtractorApp(tk.Tk):
     
         if output_path:
             try:
-                export_bom_to_excel(self.bom_dxf, self.template_BOM_xls_path, output_path)
+                export_bom_to_excel(self.bom_dxf, self.template_BOM_xls_path, 
+                                    output_path,
+                                    self.highlight_duplicate)
                 messagebox.showinfo("Success", f"BOM successfully exported to {output_path}")
             except Exception as e:
                 logging.error(f"Failed to export BOM: {e}")

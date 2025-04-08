@@ -3,6 +3,7 @@ from .extractor import extract_blocks_with_attributes_and_dimensions
 import openpyxl
 from openpyxl.styles import PatternFill
 import os
+import re
 
 # Mapping between BOM keys and Excel column headers
 header_mapping = {
@@ -122,7 +123,7 @@ def sortingBOM_dict(bom_dxf_,bytag = '' ):
     return sorted_bom
     
     
-def export_bom_to_excel(bom_data, template_path, output_path):
+def export_bom_to_excel(bom_data, template_path, output_path, highlight_duplicate=False):
     # Load the template file
     workbook = openpyxl.load_workbook(template_path)
     sheet = workbook.active  # Assuming the BOM sheet is the active one
@@ -167,6 +168,10 @@ def export_bom_to_excel(bom_data, template_path, output_path):
         sheet.cell(row=i, column=pid_tag_col).value = pid_tag
     
     sort_rows_by_pid_tag(sheet)
+    # Trigger duplicate highlighting if the flag is true
+    if highlight_duplicate:
+         print("\nHighlighting Duplicate 'P&ID TAG' Values in Purple:")
+         highlight_duplicate_tags_in_excel(sheet, 'P&ID TAG', color="800080")  # Purple
     # Save the workbook with a new name
     workbook.save(output_path)
     print(f"BOM successfully exported to {output_path}")
@@ -461,7 +466,7 @@ def compare_bomsJSON(
             # Highlight in the revised Excel file if specified
             # if sheet and highlight_missing:
             #     highlight_missing_item_in_excel(item, sheet)
-
+            
     # Add missing items from DXF to Excel if requested
     if missing_in_revised and import_missingDXF2BOM and sheet:
         add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_filtered)
@@ -473,11 +478,11 @@ def compare_bomsJSON(
     if missing_in_dxf and highlight_missing and  sheet:
         print("\nHighlighting Components in revised BOM but not in DXF BOM:")
         for item in missing_in_dxf:
-            highlight_missing_item_in_excel(item, sheet,color = "FF0000")
+            highlight_missing_item_in_excel(item, sheet,color = "FF0000") # Red color RGB
     if missing_in_revised and import_missingDXF2BOM and sheet and highlight_missing:
         print("\nHighlighting Components in DXF but not in the revised BOM:")
         for item in missing_in_revised:
-            highlight_missing_item_in_excel(item, sheet,color = "CCCCCC") 
+            highlight_missing_item_in_excel(item, sheet,color = "CCCCCC") # Gray color RGB
 
    # Trigger duplicate highlighting if the flag is true
     if highlight_duplicate and revised_excel_file:
@@ -601,13 +606,83 @@ def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
             # Highlight the new row in grey
             #sheet.cell(row=row_num, column=col_index).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
-def sort_rows_by_pid_tag(sheet):
-    """Sort rows in the Excel sheet by 'P&ID TAG' column, ignoring empty rows and renumbering the '#' column."""
+# def sort_rows_by_pid_tag(sheet):
+#     """Sort rows in the Excel sheet by 'P&ID TAG' column, ignoring empty rows and renumbering the '#' column."""
     
-    # Find the column index for 'P&ID TAG' and '#' columns
+#     # Find the column index for 'P&ID TAG' and '#' columns
+#     pid_tag_col = None
+#     num_col = None  # Column for '#'
+    
+#     for col in range(1, sheet.max_column + 1):
+#         header_value = sheet.cell(row=1, column=col).value
+#         if header_value == 'P&ID TAG':
+#             pid_tag_col = col
+#         elif header_value == '#':
+#             num_col = col
+#         if pid_tag_col is not None and num_col is not None:
+#             break
+    
+#     if pid_tag_col is None:
+#         print("P&ID TAG column not found in Excel sheet.")
+#         return
+
+#     if num_col is None:
+#         print("'#' column not found in Excel sheet.")
+#         return
+
+#     # Extract all non-empty rows (excluding the header row)
+#     rows = []
+#     for row in sheet.iter_rows(min_row=2, values_only=True):
+#         # Check if the row is fully empty
+#         if any(cell is not None and cell != '' for cell in row):
+#             rows.append(row)
+
+#     # Sort rows based on the 'P&ID TAG' value (using the pid_tag_col - 1 to match zero-based index)
+#     sorted_rows = sorted(rows, key=lambda x: (x[pid_tag_col - 1] or '').lower())
+
+#     # Clear existing rows (excluding the header)
+#     for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row):
+#         for cell in row:
+#             cell.value = None
+
+#     # Write the sorted rows back to the sheet and renumber the '#' column
+#     for i, row_data in enumerate(sorted_rows, start=2):
+#         for j, value in enumerate(row_data, start=1):
+#             # Renumber the '#' column
+#             if j == num_col:
+#                 sheet.cell(row=i, column=j).value = i - 1  # Renumber from 1
+#             else:
+#                 sheet.cell(row=i, column=j).value = value
+
+
+def sort_key_for_pid_tag(tag):
+    """
+    Generate a sorting key from a P&ID TAG string.
+
+    The key is a tuple: (number, prefix, suffix) where:
+      - number is the numeric part parsed as an integer,
+      - prefix is the initial alphabetic part in lowercase,
+      - suffix is the remaining alphabetic part in lowercase.
+      
+    If the tag doesn't match the expected pattern, it returns a key
+    that sorts the tag at the end.
+    """
+    # Match letters, digits, then optional trailing letters at the end of the string.
+    pattern = re.compile(r"^([A-Za-z]+)(\d+)([A-Za-z]*)$")
+    match = pattern.match(tag or "")
+    if match:
+        prefix, num_str, suffix = match.groups()
+        return (int(num_str), prefix.lower(), suffix.lower())
+    else:
+        return (float('inf'), tag.lower())
+
+def sort_rows_by_pid_tag(sheet):
+    """Sort rows in the Excel sheet by 'P&ID TAG' using a custom sort key, ignoring empty rows, and renumber the '#' column."""
+    
     pid_tag_col = None
     num_col = None  # Column for '#'
     
+    # Find the column indices for 'P&ID TAG' and '#' (numbering) in header row (assumed to be row 1)
     for col in range(1, sheet.max_column + 1):
         header_value = sheet.cell(row=1, column=col).value
         if header_value == 'P&ID TAG':
@@ -616,7 +691,7 @@ def sort_rows_by_pid_tag(sheet):
             num_col = col
         if pid_tag_col is not None and num_col is not None:
             break
-    
+
     if pid_tag_col is None:
         print("P&ID TAG column not found in Excel sheet.")
         return
@@ -625,26 +700,26 @@ def sort_rows_by_pid_tag(sheet):
         print("'#' column not found in Excel sheet.")
         return
 
-    # Extract all non-empty rows (excluding the header row)
+    # Gather all non-empty rows (excluding the header) as tuples of cell values.
     rows = []
     for row in sheet.iter_rows(min_row=2, values_only=True):
-        # Check if the row is fully empty
+        # Consider row non-empty if any cell is not None and not empty
         if any(cell is not None and cell != '' for cell in row):
             rows.append(row)
 
-    # Sort rows based on the 'P&ID TAG' value (using the pid_tag_col - 1 to match zero-based index)
-    sorted_rows = sorted(rows, key=lambda x: (x[pid_tag_col - 1] or '').lower())
+    # Sort rows using our custom sort key for the 'P&ID TAG' column.
+    # Adjust column index (Python uses zero-based indexing)
+    sorted_rows = sorted(rows, key=lambda r: sort_key_for_pid_tag(r[pid_tag_col - 1]))
 
-    # Clear existing rows (excluding the header)
+    # Clear existing rows below header.
     for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row):
         for cell in row:
             cell.value = None
 
-    # Write the sorted rows back to the sheet and renumber the '#' column
+    # Write the sorted rows back into the sheet and renumber the '#' column.
     for i, row_data in enumerate(sorted_rows, start=2):
         for j, value in enumerate(row_data, start=1):
-            # Renumber the '#' column
             if j == num_col:
-                sheet.cell(row=i, column=j).value = i - 1  # Renumber from 1
+                sheet.cell(row=i, column=j).value = i - 1  # Renumber '#' column starting from 1.
             else:
                 sheet.cell(row=i, column=j).value = value

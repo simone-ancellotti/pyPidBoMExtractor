@@ -114,9 +114,10 @@ class BOMExtractorApp(tk.Tk):
                     self.template_label.config(text=os.path.basename(self.template_BOM_xls_path))
                 if self.revised_excel_file:
                     self.revised_label.config(text=os.path.basename(self.revised_excel_file))
-                    
-                self.check_ready_to_exportBOM1()
+                
                 self.check_ready_to_extract()
+                #self.check_ready_to_exportBOM1()
+
                     
                 messagebox.showinfo("Settings Loaded", "Settings have been successfully loaded.")
             except Exception as e:
@@ -223,9 +224,9 @@ class BOMExtractorApp(tk.Tk):
         # Enable "Extract BOM" button if both DXF and Template Excel are uploaded
         """Enable the extract button if a valid DXF file is available."""
         if self.bom_dxf and self.dwg_file and os.path.exists(self.dwg_file) and self.template_BOM_xls_path and os.path.exists(self.template_BOM_xls_path):
-            self.extract_button.config(state=tk.NORMAL)
+            self.export_button.config(state=tk.NORMAL)
         else:
-            self.extract_button.config(state=tk.DISABLED)
+            self.export_button.config(state=tk.DISABLED)
 
     def extract_bom(self):
            if not self.dwg_file:
@@ -243,7 +244,8 @@ class BOMExtractorApp(tk.Tk):
                self.bom_dxf = bom_filtered
            
            # Enable the Export button once BOM is extracted
-           self.export_button.config(state=tk.NORMAL)
+           self.check_ready_to_exportBOM1()
+           #self.export_button.config(state=tk.NORMAL)
 
     def export_to_excel(self):
         if not self.bom_dxf:

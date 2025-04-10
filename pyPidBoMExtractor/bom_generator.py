@@ -61,7 +61,11 @@ def generate_bom(components):
                 connection_type = stripField( attributes.get('CONNECTIONTYPE') )
                 
                 
+                block_def_found = None
+                entity_found = None
                 if near_block_found:
+                    block_def  = near_block_found.get("block_def")
+                    entity_found = near_block_found.get("entity")
                     attributes_near_block_found = near_block_found.get('attributes')
                     if attributes_near_block_found:
                         if not(description):
@@ -80,6 +84,8 @@ def generate_bom(components):
                         'connection_type':connection_type,
                         'insert_point': component.get('insert_point'),
                         'dimensions': component.get('dimensions'),
+                        "block_def" : block_def_found,
+                        "entity": entity_found,
                         }
                 bom.update( {number:new_component_coded})
             else:
@@ -672,7 +678,8 @@ def sort_key_for_pid_tag(tag):
     match = pattern.match(tag or "")
     if match:
         prefix, num_str, suffix = match.groups()
-        return (int(num_str), prefix.lower(), suffix.lower())
+        # return (int(num_str), prefix.lower(), suffix.lower())
+        return ( prefix.lower(), int(num_str), suffix.lower())
     else:
         return (float('inf'), tag.lower())
 

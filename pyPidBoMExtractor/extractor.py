@@ -45,7 +45,8 @@ def extract_blocks_with_attributes_and_dimensions(dwg_file_path):
             "attributes": attributes,
             "contains_circle": contains_circle,
             "dimensions": dimensions,  # Adding dimensions to the component
-            "block_def" : block_def
+            "block_def" : block_def,
+            "entity" : entity,
         }
         components.append(component)
 

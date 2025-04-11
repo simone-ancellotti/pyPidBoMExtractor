@@ -5,7 +5,8 @@ Created on Wed Apr  9 10:14:45 2025
 @author: user
 """
 
-
+from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
+from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 import ezdxf
 
 def get_attrib_from_tag(tag, block):
@@ -110,7 +111,7 @@ def add_new_tag_to_insert(tag, text='', insert_block=None):
             break
     else:
         # Add new attribute definition to the block definition.
-        new_attdef = block_def.add_attdef(
+        new_attrib = block_def.add_attdef(
             tag=tag,
             insert=(0, 0),  # Relative insertion point inside the block
             text='',
@@ -122,27 +123,7 @@ def add_new_tag_to_insert(tag, text='', insert_block=None):
 
     return new_attrib
 
-def update_tag_value_in_block(text,tag, insert_block):
-    
-    if insert_block is None:
-        raise ValueError("You must provide an insert block.")
 
-    # Ensure the insert_block is the correct type.
-    if not isinstance(insert_block, ezdxf.entities.insert.Insert):
-        raise ValueError("The provided block must be of type ezdxf.entities.insert.Insert.")
-
-    # Set a default text value if text parameter is empty.
-    text_val = text if text else 'default_value'
-    
-    attrib = get_attrib_from_tag(tag, insert_block)
-    if attrib:
-        attrib.dxf.text = text_val
-        return attrib
-    else:
-        new_attrib = add_new_tag_to_insert(tag, text=text_val, insert_block=insert_block)
-        return new_attrib
-    
-    return None
 
 def update_tag_value_in_block(text, tag, insert_block):
     """

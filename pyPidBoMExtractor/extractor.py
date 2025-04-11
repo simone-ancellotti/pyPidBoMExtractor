@@ -50,4 +50,4 @@ def extract_blocks_with_attributes_and_dimensions(dwg_file_path):
         }
         components.append(component)
 
-    return components
+    return components,dwg

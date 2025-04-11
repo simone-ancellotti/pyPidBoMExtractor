@@ -1,0 +1,10 @@
+{
+    "dwg_file": "C:/ASETS-code/python/pyp-id_finder/tests/test1/Schema di funzionamento_rev1.1.dxf",
+    "template_BOM_xls_path": "C:/ASETS-code/python/pyp-id_finder/tests/test1/BOM_ULIX_template.xlsx",
+    "revised_excel_file": "C:/ASETS-code/python/pyp-id_finder/tests/test1/BOM_1.1_rev.xlsx",
+    "highlight_missing": false,
+    "import_missing": false,
+    "highlight_duplicate": true,
+    "flagSaveNewExcellFile": true,
+    "flagIgnoreWETEFE": false
+}

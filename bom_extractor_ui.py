@@ -18,7 +18,7 @@ class BOMExtractorApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("BOM Extractor Application")
-        self.geometry("600x440")  # Adjusted window size for better layout
+        self.geometry("610x440")  # Adjusted window size for better layout
 
         # Variables to hold file paths and options
         self.dwg_file = None
@@ -33,10 +33,17 @@ class BOMExtractorApp(tk.Tk):
         # UI Setup
         self.setup_ui()
         self.create_menu() 
+        
+        self.bind_all("<ButtonRelease-1>", self.on_global_button_release)
 
+    def on_global_button_release(self, event):
+        """Global callback executed on every left mouse button release."""
+        self.check_general_buttons()
+        
     def create_menu(self):
         # Create the menu bar
         menubar = tk.Menu(self)
+        
 
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
@@ -64,7 +71,7 @@ class BOMExtractorApp(tk.Tk):
             "dwg_file": self.dwg_file,
             "template_BOM_xls_path": self.template_BOM_xls_path,
             "revised_excel_file": self.revised_excel_file,
-            "bom_dxf": self.bom_dxf,  # If this is serializable (consider omitting if large)
+            #"bom_dxf": self.bom_dxf,  # If this is serializable (consider omitting if large)
             "highlight_missing": self.highlight_missing.get(),
             "import_missing": self.import_missing.get(),
             "highlight_duplicate": self.highlight_duplicate.get(),
@@ -100,7 +107,7 @@ class BOMExtractorApp(tk.Tk):
                 self.dwg_file = settings.get("dwg_file")
                 self.template_BOM_xls_path = settings.get("template_BOM_xls_path")
                 self.revised_excel_file = settings.get("revised_excel_file")
-                self.bom_dxf = settings.get("bom_dxf")
+                #self.bom_dxf = settings.get("bom_dxf")
                 self.highlight_missing.set(settings.get("highlight_missing", False))
                 self.import_missing.set(settings.get("import_missing", False))
                 self.highlight_duplicate.set(settings.get("highlight_duplicate", False))
@@ -125,6 +132,7 @@ class BOMExtractorApp(tk.Tk):
         
     def setup_ui(self):
         # Use a grid layout for better positioning
+        
 
         # Upload DXF Button and Label (Top-left)
         self.dxf_button = tk.Button(self, text="Upload DXF", command=self.upload_dxf)
@@ -179,7 +187,10 @@ class BOMExtractorApp(tk.Tk):
 
         # Button to Compare BOM (Bottom-Center)
         self.compare_button = tk.Button(self, text="Compare BOM vs DXF", state=tk.DISABLED, command=self.compare_bom)
-        self.compare_button.grid(row=8, column=0, columnspan=2, padx=20, pady=20)
+        self.compare_button.grid(row=8, column=0, columnspan=3, padx=20, pady=20)
+        
+        self.import_dxf_button = tk.Button(self, text="Import BOM into DXF", state=tk.DISABLED, command=self.import_BOM_into_DXF)
+        self.import_dxf_button.grid(row=8, column=0, columnspan=1, padx=20, pady=20)
 
             
     # def upload_dxf(self):
@@ -210,7 +221,8 @@ class BOMExtractorApp(tk.Tk):
         if self.revised_excel_file:
             logging.info(f"Uploaded Revised BOM Excel file: {self.revised_excel_file}")
             self.revised_label.config(text=os.path.basename(self.revised_excel_file))
-            self.compare_button.config(state=tk.NORMAL)
+            #self.compare_button.config(state=tk.NORMAL)
+            self.check_ready_to_export_revised_BOM2()
 
     def check_ready_to_extract(self):
         # Enable "Extract BOM" button if both DXF and Template Excel are uploaded
@@ -227,14 +239,26 @@ class BOMExtractorApp(tk.Tk):
             self.export_button.config(state=tk.NORMAL)
         else:
             self.export_button.config(state=tk.DISABLED)
-
+            
+    def check_ready_to_export_revised_BOM2(self):
+        if self.revised_excel_file and os.path.exists(self.revised_excel_file):
+            if self.bom_dxf and self.dwg_file and os.path.exists(self.dwg_file):
+                self.compare_button.config(state=tk.NORMAL)
+                self.import_dxf_button.config(state=tk.NORMAL)
+                     
+                     
+    def check_general_buttons(self):
+        self.check_ready_to_extract()
+        self.check_ready_to_exportBOM1()
+        self.check_ready_to_export_revised_BOM2()
+        
     def extract_bom(self):
            if not self.dwg_file:
                messagebox.showerror("Error", "Please upload a DXF file first.")
                return
         
            logging.info("Extracting BOM from DXF...")
-           self.bom_dxf = extract_bom_from_dxf(self.dwg_file)
+           self.bom_dxf,docDxf = extract_bom_from_dxf(self.dwg_file)
            
            if self.flagIgnoreWETEFE.get():
                tagsvaluesToIgnore = ['WE', 'TE', 'FE']
@@ -277,8 +301,7 @@ class BOMExtractorApp(tk.Tk):
             except Exception as e:
                 logging.error(f"Failed to export BOM: {e}")
                 messagebox.showerror("Error", f"Failed to export BOM: {e}")
-
-    
+                
     def compare_bom(self):
         try:
             logging.info("Comparing BOM with DXF...")
@@ -348,7 +371,8 @@ class BOMExtractorApp(tk.Tk):
             logging.error(f"An error occurred during BOM comparison: {e}")
             messagebox.showerror("Error", f"Failed to compare BOM: {e}")
 
-
+    def import_BOM_into_DXF(self):
+        return None
 if __name__ == "__main__":
     app = BOMExtractorApp()
     app.mainloop()

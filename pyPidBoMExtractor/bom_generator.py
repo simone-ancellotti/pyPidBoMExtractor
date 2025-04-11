@@ -64,8 +64,8 @@ def generate_bom(components):
                 block_def_found = None
                 entity_found = None
                 if near_block_found:
-                    block_def  = near_block_found.get("block_def")
                     entity_found = near_block_found.get("entity")
+                    block_def  = near_block_found.get("block_def")
                     attributes_near_block_found = near_block_found.get('attributes')
                     if attributes_near_block_found:
                         if not(description):
@@ -84,8 +84,9 @@ def generate_bom(components):
                         'connection_type':connection_type,
                         'insert_point': component.get('insert_point'),
                         'dimensions': component.get('dimensions'),
-                        "block_def" : block_def_found,
-                        "entity": entity_found,
+                        #"target_block_def" : block_def_found,
+                        "target_entity": entity_found,
+                        "tag_entity": component,
                         }
                 bom.update( {number:new_component_coded})
             else:
@@ -183,14 +184,14 @@ def export_bom_to_excel(bom_data, template_path, output_path, highlight_duplicat
     print(f"BOM successfully exported to {output_path}")
 
 def extract_bom_from_dxf(dwg_file):
-    components = extract_blocks_with_attributes_and_dimensions(dwg_file)
+    components, docDxf = extract_blocks_with_attributes_and_dimensions(dwg_file)
     
     # filter only the blocks stickers TAGs to determine the components in BOM
     bom, blocks_notValid = generate_bom(components)
     #print(bom)
     # Print the formatted BOM with dimensions
     print_bom(bom)
-    return bom
+    return bom,docDxf
     
 
 # def load_bom_from_excel(file_path):

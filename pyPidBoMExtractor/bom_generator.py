@@ -56,11 +56,15 @@ def generate_bom(components):
             
             
             if targetObjectType and targetObjectLoopNumber:
+                # get type of component tag and 1st block near to it.
+                # typeTag = type of component like Ball Valve with Pneumatic actuator, pH metro, etc.
                 typeTag,distance,near_block_found = findTypeBlockFromTag(component,components)
+                # get description and connection type in the tag/sticker
                 description = stripField(  attributes.get('DESCRIPTION') ) 
                 connection_type = stripField( attributes.get('CONNECTIONTYPE') )
                 
-                
+                # if description and type of componente not present then fetch description 
+                # and type from the nearest block
                 block_def_found = None
                 entity_found = None
                 if near_block_found:
@@ -72,7 +76,10 @@ def generate_bom(components):
                             description = attributes_near_block_found.get('DESCRIPTION')
                         if not(connection_type):
                             connection_type = attributes_near_block_found.get('CONNECTIONTYPE')
-                    
+                
+                # "tag_entity": component - the ezdxf.entities.insert.Insert obj of the tag/sticker
+                # "target_entity": entity_found - the ezdxf.entities.insert.Insert obj which tag/sticker is pointing to,
+                #                               if a sticker has 
                 new_component_coded = {
                         "count":number,
                         'targetObjectType':targetObjectType,

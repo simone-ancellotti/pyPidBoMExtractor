@@ -4,6 +4,7 @@ import logging
 # Import the pyPidBoMExtractor package
 from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
+from pyPidBoMExtractor.importerdxf import import_BOMjson_into_DXF
 import os
 import json
 
@@ -25,6 +26,7 @@ class BOMExtractorApp(tk.Tk):
         self.template_BOM_xls_path = None
         self.revised_excel_file = None
         self.bom_dxf = None
+        self.docDxf = None
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
         self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
@@ -258,7 +260,7 @@ class BOMExtractorApp(tk.Tk):
                return
         
            logging.info("Extracting BOM from DXF...")
-           self.bom_dxf,docDxf = extract_bom_from_dxf(self.dwg_file)
+           self.bom_dxf,self.docDxf = extract_bom_from_dxf(self.dwg_file)
            
            if self.flagIgnoreWETEFE.get():
                tagsvaluesToIgnore = ['WE', 'TE', 'FE']
@@ -371,8 +373,52 @@ class BOMExtractorApp(tk.Tk):
             logging.error(f"An error occurred during BOM comparison: {e}")
             messagebox.showerror("Error", f"Failed to compare BOM: {e}")
 
+
+    
+    def save_dxf_windows(self):
+        """
+        Open a 'Save As' dialog to store the updated DXF file.
+        
+        It uses the current DXF file name (self.dwg_file) to create a default file name,
+        then uses self.docDxf.saveas to write the file to the user-selected path.
+        """
+        # Ensure a DXF file is loaded.
+        if not self.dwg_file:
+            messagebox.showerror("Error", "No DXF file loaded.")
+            return
+        
+        # Generate a default file name based on the input DXF filename.
+        dxf_file_name = os.path.basename(self.dwg_file)
+        default_filename = os.path.splitext(dxf_file_name)[0] + "_updated.dxf"
+    
+        # Open a file dialog for saving the DXF file.
+        output_path = filedialog.asksaveasfilename(
+            defaultextension=".dxf",
+            filetypes=[("DXF Files", "*.dxf")],
+            initialfile=default_filename,
+            title="Save updated DXF file as"
+        )
+        
+        # Check if the user provided a file name.
+        if not output_path:
+            messagebox.showerror("Error", "No file selected for saving the updated DXF.")
+            return
+        
+        try:
+            # Save the updated DXF file using the chosen path.
+            self.docDxf.saveas(output_path)
+            messagebox.showinfo("Success", f"DXF saved successfully:\n{output_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save DXF file: {e}")
+
     def import_BOM_into_DXF(self):
-        return None
+        # Load the revised Excel file as JSON
+        bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
+        rows_xls_no = import_BOMjson_into_DXF(bom_revisedJSON,self.bom_dxf)
+        
+        self.save_dxf_windows()
+        return None   
+    
 if __name__ == "__main__":
     app = BOMExtractorApp()
     app.mainloop()

@@ -284,7 +284,10 @@ def findTypeBlockFromTag(block,components):
     distance = None
     block_found = None
     
-    if typeTag == '' or typeTag==None:
+    flag_empty_string=False
+    if isinstance(typeTag, str):
+        flag_empty_string = typeTag.strip() == '' 
+    if flag_empty_string or typeTag==None:
         # if type not found in block then look for it in the neightbours
         
         # here the potential options sorted by their distances to block under analysis
@@ -546,4 +549,5 @@ def update_tag_value_in_block(text, tag, insert_block):
     else:
         # If the attribute does not exist, create a new one and synchronize with the block definition.
         new_attrib = add_new_tag_to_insert(tag, text=text_val, insert_block=insert_block)
+        new_attrib.dxf.text = text_val
         return new_attrib

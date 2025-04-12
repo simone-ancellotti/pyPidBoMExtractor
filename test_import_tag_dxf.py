@@ -35,7 +35,7 @@ def get_row_by_field(bom_dict, field_name, field_value, case_sensitive=True):
                 return row
         else:
             # Convert both to strings and compare in lowercase.
-            if str(current_value).lower() == str(field_value).lower():
+            if str(current_value).strip().replace(' ','').lower() == str(field_value).strip().replace(' ','').lower():
                 return row
 
     return None
@@ -50,6 +50,7 @@ bom_revisedJSON = load_bom_from_excel_to_JSON(file_xls_path)
 
 
 comp1 = bom_dxf[1]
+comp2 = bom_dxf[2]
 target_entity = comp1['target_entity']
 sticker_entity1 = comp1['tag_entity']['entity']
 
@@ -66,18 +67,44 @@ tags_xls2dxf= {'Type':'TYPE', 'C type':'CONNECTIONTYPE', 'Description':'DESCRIPT
                'Q (m3/h)':'Q(m3/h)', 'Supplier':'SUPPLIER', 'Brand':'BRAND',
                'Model':'MODEL', 'Notes':'NOTES', 'Datasheet':'DATASHEET'
                }
+tags_dxf2xls = {value: key for key, value in tags_xls2dxf.items()}
 
-tags = ['P&ID TAG', 'Fluid', 'Unit', 'Skid', 'Type', 'Description', 'Material', 
-   'Seal Mat.', 'P     (kW)', 'PN   (bar)', 'Act NO/NC', 'Size', 'C type',
-   'cap. (tanks L)', 'Q (m3/h)', 'Supplier', 'Brand', 'Model', 'Notes', 
-   'Datasheet']
 
-comp1['P&ID TAG']
-row=get_row_by_field(bom_revisedJSON, 'P&ID TAG', comp1['P&ID TAG'], case_sensitive=True)
-for key in tags_xls2dxf.keys():
-    key_dxf = tags_xls2dxf[key]
-    text = row.get(key)
-    update_tag_value_in_block(text, key_dxf, target_entity)
+
+
+def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf):
+    rows_xls_no = []
+    for item_xls in bom_revisedJSON.values():
+        PID_TAG_xls = item_xls.get('P&ID TAG')
+        if PID_TAG_xls:
+            dxf_item_found = get_row_by_field(bom_dxf, 'P&ID TAG', PID_TAG_xls , case_sensitive=False)
+            if dxf_item_found:
+                entity_dxf_to_modify = dxf_item_found['target_entity']           
+                if not(entity_dxf_to_modify):
+                    entity_dxf_to_modify = dxf_item_found['tag_entity']['entity']
+                
+                if entity_dxf_to_modify:
+                    for key_xls in tags_xls2dxf.keys():
+                        key_dxf = tags_xls2dxf[key_xls]
+                        text_xls = item_xls.get(key_xls)
+                        text_xls = text_xls.strip()
+                        update_tag_value_in_block(text_xls, key_dxf, entity_dxf_to_modify)
+                else: 
+                    rows_xls_no.append()
+    return rows_xls_no
+           
+           
+
+rows_xls_no = import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf)        
+        
+
+
+# comp1['P&ID TAG']
+# row=get_row_by_field(bom_revisedJSON, 'P&ID TAG', comp1['P&ID TAG'], case_sensitive=False)
+# for key in tags_xls2dxf.keys():
+#     key_dxf = tags_xls2dxf[key]
+#     text = row.get(key)
+#     update_tag_value_in_block(text, key_dxf, target_entity)
 
 doc.saveas(r"./tests/test1/Schema di funzionamento_rev1.1_modified.dxf")
 print("Modified DXF saved as 'my_drawing_modified.dxf'.")

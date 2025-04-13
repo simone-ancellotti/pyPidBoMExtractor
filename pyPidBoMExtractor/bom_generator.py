@@ -12,10 +12,20 @@ header_mapping = {
         'targetObjectLoopNumber': 'N',
         'targetObjectType2nd': 'D',
         'TYPE': 'Type',
-        'description': 'Description',
-        'connection_type':'C type'
+        'DESCRIPTION': 'Description',
+        'CONNECTIONTYPE':'C type'
     }
 
+tags_xls2dxf= {'Type':'TYPE', 'C type':'CONNECTIONTYPE', 'Description':'DESCRIPTION',
+               'Fluid':'FLUID', 'Unit':'UNIT', 'Skid':'SKID', 'Type':'TYPE', 
+               'Material':'MATERIAL', 'Seal Mat.':'SEAL_MAT', 
+               'P     (kW)':'POWER_KW','PN   (bar)':'PN_bar', 
+               'Act NO/NC':'ACT_NO_NC', 'Size':'SIZE','cap. (tanks L)':'CAP.(TANK L)', 
+               'Q (m3/h)':'Q(m3/h)', 'Supplier':'SUPPLIER', 'Brand':'BRAND',
+               'Model':'MODEL', 'Notes':'NOTES', 'Datasheet':'DATASHEET'
+               }
+tags_dxf2xls = {value: key for key, value in tags_xls2dxf.items()}
+header_mapping.update(tags_dxf2xls)
 
 
 def filterBOM_Ignore(bom,tagToIgnore,valuesToIgnore):
@@ -76,6 +86,7 @@ def generate_bom(components):
                             description = attributes_near_block_found.get('DESCRIPTION')
                         if not(connection_type):
                             connection_type = attributes_near_block_found.get('CONNECTIONTYPE')
+                            
                 
                 # "tag_entity": component - the ezdxf.entities.insert.Insert obj of the tag/sticker
                 # "target_entity": entity_found - the ezdxf.entities.insert.Insert obj which tag/sticker is pointing to,
@@ -87,14 +98,23 @@ def generate_bom(components):
                         'targetObjectType2nd':targetObjectType2nd,
                         'P&ID TAG': str(targetObjectType)+str(targetObjectLoopNumber)+str(targetObjectType2nd),
                         'TYPE':typeTag,
-                        'description':description,
-                        'connection_type':connection_type,
+                        'DESCRIPTION':description,
+                        'CONNECTIONTYPE':connection_type,
                         'insert_point': component.get('insert_point'),
                         'dimensions': component.get('dimensions'),
                         #"target_block_def" : block_def_found,
                         "target_entity": entity_found,
                         "tag_entity": component,
                         }
+                if entity_found:
+                    entity_to_be_extracted = entity_found
+                else: entity_to_be_extracted = component['entity']
+                
+                for att in  entity_to_be_extracted.attribs:
+                    if not(att.dxf.tag in new_component_coded.keys()):
+                        new_component_coded.update({att.dxf.tag : att.dxf.text  })
+                        
+                
                 bom.update( {number:new_component_coded})
             else:
                 block_name = component['block_name']
@@ -115,7 +135,7 @@ def print_bom(bom):
         D = component['targetObjectType2nd']
         pid_TAG = str(L)+str(N)+str(D)
         comp_type = component['TYPE']
-        description=component['description']
+        description=component['DESCRIPTION']
         if description == None: description=''
         if comp_type == None: comp_type=''
         print(f"{it:<3}|{L:<4}|{N:<5}|{D:<4}|{pid_TAG:<10}|{comp_type:<30}|{description:<30}")
@@ -143,14 +163,8 @@ def export_bom_to_excel(bom_data, template_path, output_path, highlight_duplicat
     sheet = workbook.active  # Assuming the BOM sheet is the active one
     
     # # Mapping between BOM keys and Excel column headers
-    # header_mapping = {
-    #     'count': '#',
-    #     'targetObjectType': 'L',
-    #     'targetObjectLoopNumber': 'N',
-    #     'targetObjectType2nd': 'D',
-    #     'TYPE': 'Type',
-    #     'description': 'Description'
-    # }
+    print( header_mapping )
+
     
     # Find the corresponding column index for each header in the Excel template
     header_row = 1  # Assuming headers are in the first row
@@ -264,7 +278,7 @@ def load_bom_from_excel_to_JSON(file_path):
 #             'N': item['targetObjectLoopNumber'],
 #             'D': item['targetObjectType2nd'],
 #             'Type': item['TYPE'],
-#             'Description': item['description']
+#             'Description': item['DESCRIPTION']
 #         })
     
 #     # Convert the list to a DataFrame

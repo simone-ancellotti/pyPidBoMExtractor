@@ -8,16 +8,6 @@ Created on Fri Apr 11 13:00:01 2025
 import ezdxf
 from .utils import update_tag_value_in_block
 
-tags_xls2dxf= {'Type':'TYPE', 'C type':'CONNECTIONTYPE', 'Description':'DESCRIPTION',
-               'Fluid':'FLUID', 'Unit':'UNIT', 'Skid':'SKID', 'Type':'TYPE', 
-               'Material':'MATERIAL', 'Seal Mat.':'SEAL_MAT', 
-               'P     (kW)':'POWER_KW','PN   (bar)':'PN_bar', 
-               'Act NO/NC':'ACT_NO_NC', 'Size':'SIZE','cap. (tanks L)':'CAP.(TANK L)', 
-               'Q (m3/h)':'Q(m3/h)', 'Supplier':'SUPPLIER', 'Brand':'BRAND',
-               'Model':'MODEL', 'Notes':'NOTES', 'Datasheet':'DATASHEET'
-               }
-tags_dxf2xls = {value: key for key, value in tags_xls2dxf.items()}
-
 
 def get_row_by_field(bom_dict, field_name, field_value, case_sensitive=True):
     """
@@ -62,7 +52,7 @@ def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf):
                 if entity_dxf_to_modify:
                     for key_xls in tags_xls2dxf.keys():
                         key_dxf = tags_xls2dxf[key_xls]
-                        text_xls = item_xls.get(key_xls)
+                        text_xls = str(item_xls.get(key_xls))
                         text_xls = text_xls.strip()
                         update_tag_value_in_block(text_xls, key_dxf, entity_dxf_to_modify)
                 else: 

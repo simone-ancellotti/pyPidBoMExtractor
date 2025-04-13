@@ -11,9 +11,9 @@ header_mapping = {
         'targetObjectType': 'L',
         'targetObjectLoopNumber': 'N',
         'targetObjectType2nd': 'D',
-        'TYPE': 'Type',
-        'DESCRIPTION': 'Description',
-        'CONNECTIONTYPE':'C type'
+        #'TYPE': 'Type',
+        #'DESCRIPTION': 'Description',
+        #'CONNECTIONTYPE':'C type'
     }
 
 tags_xls2dxf= {'Type':'TYPE', 'C type':'CONNECTIONTYPE', 'Description':'DESCRIPTION',

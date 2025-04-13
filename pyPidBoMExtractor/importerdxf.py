@@ -7,6 +7,7 @@ Created on Fri Apr 11 13:00:01 2025
 
 import ezdxf
 from .utils import update_tag_value_in_block
+from .bom_generator import tags_xls2dxf
 
 
 def get_row_by_field(bom_dict, field_name, field_value, case_sensitive=True):

@@ -219,45 +219,149 @@ class BOMExtractorApp(tk.Tk):
     #         logging.info(f"Uploaded DXF file: {self.dwg_file}")
     #         self.extract_button.config(state=tk.NORMAL)
     
+    # def setup_table_tab(self):
+    #     # Create a frame to hold the table and its scrollbars
+    #     table_frame = ttk.Frame(self.table_dxf_tab)
+    #     table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+    #     # Use one row from sample_bom_data to determine columns.
+         
+    #     #sample_row = header_mapping[next(iter(header_mapping))]
+    #     columns = list(header_mapping.values())
+
+    #     # Create a Treeview to display the BOM data.
+    #     self.tree1 = ttk.Treeview(table_frame, columns=columns, show="headings")
+    #     self.tree1.grid(row=0, column=0, sticky="nsew")
+
+    #     # Set up column headings.
+    #     for col in columns:
+    #         self.tree1.heading(col, text=col)
+    #         self.tree1.column(col, width=100, anchor="center")
+        
+
+    #     # Add vertical and horizontal scrollbars.
+    #     vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree1.yview)
+    #     vsb.grid(row=0, column=1, sticky="ns")
+    #     self.tree1.configure(yscrollcommand=vsb.set)
+
+    #     hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree1.xview)
+    #     hsb.grid(row=1, column=0, sticky="ew")
+    #     self.tree1.configure(xscrollcommand=hsb.set)
+
+    #     table_frame.rowconfigure(0, weight=1)
+    #     table_frame.columnconfigure(0, weight=1)
     def setup_table_tab(self):
-        # Create a frame to hold the table and its scrollbars
+        # --- Filtering Controls ---
+        # Create a frame at the top of the DXF tab for filter controls.
+        filter_frame = ttk.Frame(self.table_dxf_tab)
+        filter_frame.pack(fill="x", padx=10, pady=5)
+        
+        ttk.Label(filter_frame, text="Filter Column:").pack(side="left", padx=5)
+        
+        # The options will be the friendly names (the values in header_mapping)
+        options = list(header_mapping.values())
+        self.dxf_filter_col_var = tk.StringVar(value=options[0])
+        self.column_combobox = ttk.Combobox(filter_frame, textvariable=self.dxf_filter_col_var,
+                                            values=options, state="readonly", width=15)
+        self.column_combobox.pack(side="left", padx=5)
+        self.column_combobox.bind("<<ComboboxSelected>>", self.update_dxf_filter)
+        
+        ttk.Label(filter_frame, text="Filter:").pack(side="left", padx=5)
+        self.dxf_filter_text_var = tk.StringVar()
+        filter_entry = ttk.Entry(filter_frame, textvariable=self.dxf_filter_text_var)
+        filter_entry.pack(side="left", fill="x", expand=True, padx=5)
+        filter_entry.bind("<KeyRelease>", self.update_dxf_filter)
+        
+        # --- Table Setup ---
+        # Create a frame to hold the Treeview and its scrollbars.
         table_frame = ttk.Frame(self.table_dxf_tab)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-        # Use one row from sample_bom_data to determine columns.
-         
-        #sample_row = header_mapping[next(iter(header_mapping))]
-        columns = list(header_mapping.values())
-
-        # Create a Treeview to display the BOM data.
-        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings")
-        self.tree.grid(row=0, column=0, sticky="nsew")
-
-        # Set up column headings.
-        for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, width=100, anchor="center")
         
-
-        # Add vertical and horizontal scrollbars.
-        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
+        # Use the header mapping for the display order. Here, we'll show the friendly names.
+        self.dxf_display_columns = list(header_mapping.values())
+        # And store the "real" column keys (order) for data retrieval.
+        self.dxf_data_order = list(header_mapping.keys())
+        
+        self.tree1 = ttk.Treeview(table_frame, columns=self.dxf_display_columns, show="headings")
+        self.tree1.grid(row=0, column=0, sticky="nsew")
+        
+        for col in self.dxf_display_columns:
+            self.tree1.heading(col, text=col)
+            self.tree1.column(col, width=100, anchor="center")
+            
+        # Add vertical scrollbar.
+        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree1.yview)
         vsb.grid(row=0, column=1, sticky="ns")
-        self.tree.configure(yscrollcommand=vsb.set)
-
-        hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree.xview)
+        self.tree1.configure(yscrollcommand=vsb.set)
+        
+        # Add horizontal scrollbar.
+        hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree1.xview)
         hsb.grid(row=1, column=0, sticky="ew")
-        self.tree.configure(xscrollcommand=hsb.set)
-
+        self.tree1.configure(xscrollcommand=hsb.set)
+        
         table_frame.rowconfigure(0, weight=1)
         table_frame.columnconfigure(0, weight=1)
+    
+    def update_dxf_filter(self, event=None):
+        """
+        Called when the filter text or selected column changes.
+        Filters self.bom_dxf and repopulates self.tree1.
+        """
+        # If no BOM data is loaded, simply return.
+        if not self.bom_dxf:
+            return
+        
+        # Invert header_mapping to map from friendly (display) name back to the actual key.
+        inv_map = {v: k for k, v in header_mapping.items()}
+        selected_display = self.dxf_filter_col_var.get()
+        # Determine the actual dictionary key for filtering.
+        filter_key = inv_map.get(selected_display, self.dxf_data_order[0])
+        
+        filter_text = self.dxf_filter_text_var.get().lower()
+        filtered = {}
+        for row_id, row in self.bom_dxf.items():
+            cell_value = str(row.get(filter_key, "")).lower()
+            if filter_text in cell_value:
+                filtered[row_id] = row
+        # Store the filtered data (you might want to keep the original in self.bom_dxf).
+        self.filtered_bom_dxf = filtered
+        self.updateTableDXFFiltered()
+    
+    def updateTableDXFFiltered(self):
+        """
+        Clears and repopulates self.tree1 using self.filtered_bom_dxf.
+        """
+        # Clear current items from the Treeview.
+        for item in self.tree1.get_children():
+            self.tree1.delete(item)
+        
+        # Use the filtered data if available.
+        data = self.filtered_bom_dxf if hasattr(self, 'filtered_bom_dxf') else self.bom_dxf
+        if not data:
+            return
+        
+        # Insert each row into the tree.
+        for row in data.values():
+            # Create a tuple of values in the order defined by self.dxf_data_order.
+            values = tuple(row.get(key, "") for key in self.dxf_data_order)
+            # Example: (optional) add a tag if you want to color certain rows.
+            tags = ()
+            # For instance, if you want to highlight rows whose "P&ID TAG" starts with "pH6":
+            if str(row.get("P&ID TAG", "")).startswith("pH6"):
+                tags = ("highlight",)
+            self.tree1.insert("", "end", values=values, tags=tags)
+        
+        # Configure tag for row coloring.
+        self.tree1.tag_configure("highlight", background="lightblue")
+
         
     def updateTableDXF(self):
-        # Insert sample data into the tree.
+        # Insert sample data into the tree1.
         if self.bom_dxf:
             columns = list(header_mapping.keys())
             for row in self.bom_dxf.values():
                  values = tuple(row.get(col, "") for col in columns)
-                 self.tree.insert("", "end", values=values)    
+                 self.tree1.insert("", "end", values=values)    
                  
     def upload_dxf(self):
         self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])

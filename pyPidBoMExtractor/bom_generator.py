@@ -16,7 +16,7 @@ header_mapping = {
         #'CONNECTIONTYPE':'C type'
     }
 
-tags_xls2dxf= {'Type':'TYPE', 'C type':'CONNECTIONTYPE', 'Description':'DESCRIPTION',
+tags_xls2dxf= {'P&ID TAG':'P&ID TAG','Type':'TYPE', 'C type':'CONNECTIONTYPE', 'Description':'DESCRIPTION',
                'Fluid':'FLUID', 'Unit':'UNIT', 'Skid':'SKID', 'Type':'TYPE', 
                'Material':'MATERIAL', 'Seal Mat.':'SEAL_MAT', 
                'P     (kW)':'POWER_KW','PN   (bar)':'PN_bar', 

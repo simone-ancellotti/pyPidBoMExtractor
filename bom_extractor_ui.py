@@ -246,11 +246,12 @@ class BOMExtractorApp(tk.Tk):
 
         # Button to Compare BOM (Bottom-Center)
         self.compare_button = tk.Button(self.main_tab, text="Compare BOM vs DXF", state=tk.DISABLED, command=self.compare_bom)
-        self.compare_button.grid(row=8, column=0, columnspan=1, padx=20, pady=20)
+        self.compare_button.grid(row=8, column=0, columnspan=1, padx=10, pady=20)
+        
         
         self.import_dxf_button = tk.Button(self.main_tab, text="Import BOM into DXF", state=tk.DISABLED, command=self.import_BOM_into_DXF)
         self.import_dxf_button.grid(row=8, column=1, columnspan=1, padx=20, pady=20)
-
+        
             
     # def upload_dxf(self):
     #     self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
@@ -410,7 +411,7 @@ class BOMExtractorApp(tk.Tk):
             return {}
         
     def update_color_mapping_duplicates_table(self,bom_dict,colour_mapping):
-        if self.highlight_duplicate.get():
+        if self.highlight_duplicate.get() and bom_dict and isinstance(colour_mapping,dict):
             duplicates=find_duplicates(bom_dict, 'P&ID TAG')
             duplicates_tags = [pid_tag for pid_tag in duplicates.keys()]
             return make_color_mapping(colour_mapping ,duplicates_tags,"#800080")
@@ -428,7 +429,6 @@ class BOMExtractorApp(tk.Tk):
         if colour_mapping11:
             self.colour_mapping1.update(colour_mapping11)
         if colour_mapping22:
-            print('colour_mapping22: '+str(colour_mapping22))
             self.colour_mapping2.update(colour_mapping22)
             
         self.table_dxf_items_filterable.set_data(self.bom_dxf,self.colour_mapping1)
@@ -519,7 +519,8 @@ class BOMExtractorApp(tk.Tk):
            
            # Enable the Export button once BOM is extracted
            self.check_ready_to_exportBOM1()
-           self.updateTableDXF()
+           #self.updateTableDXF()
+           self.updateTableRevBOM()
            #self.export_button.config(state=tk.NORMAL)
 
     def export_to_excel(self):

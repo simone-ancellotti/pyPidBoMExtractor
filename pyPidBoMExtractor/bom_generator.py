@@ -228,6 +228,7 @@ def extract_bom_from_dxf(dwg_file):
     
     # filter only the blocks stickers TAGs to determine the components in BOM
     bom, blocks_notValid = generate_bom(components)
+    bom = sort_bom_by_pid_tag(bom)
     #print(bom)
     # Print the formatted BOM with dimensions
     print_bom(bom)

@@ -4,8 +4,9 @@ import logging
 # Import the pyPidBoMExtractor package
 from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
-from pyPidBoMExtractor.bom_generator import header_mapping
+from pyPidBoMExtractor.bom_generator import header_mapping, header_mapping_reverse ,make_color_mapping,find_duplicates
 from pyPidBoMExtractor.importerdxf import import_BOMjson_into_DXF
+from pyPidBoMExtractor.filterable_table import FilterableTable
 import os
 import json
 
@@ -28,6 +29,12 @@ class BOMExtractorApp(tk.Tk):
         self.revised_excel_file = None
         self.bom_dxf = None
         self.docDxf = None
+        self.bom_revisedJSON = {}
+        self.bom_dxf_JSON_like_xls= {}
+        self.colour_mapping1 = None
+        self.colour_mapping2 = None
+        self.missing_in_revised = None
+        self.missing_in_dxf = None
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
         self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
@@ -48,10 +55,37 @@ class BOMExtractorApp(tk.Tk):
         self.notebook.add(self.table_rev_tab, text="BOM Table revised")
         self.notebook.add(self.table_missing_tab, text="import DXF")
         
+        
         # UI Setup
         self.setup_ui()
         self.create_menu() 
-        self.setup_table_tab()
+        #self.setup_table_tab()
+        
+        
+        display_columns = list(header_mapping.values())
+        self.table_dxf_items_filterable = FilterableTable(
+            master=self.table_dxf_tab,
+            data=self.bom_dxf_JSON_like_xls or {},   # Initially empty or loaded data.
+            columns=display_columns,
+            mapping=header_mapping_reverse,    # Map from display names to keys.
+            filter_column_default="P&ID TAG",
+            colour_mapping = None,
+        )
+        self.table_dxf_items_filterable.pack(fill="both", expand=True)
+        
+        display_columns = list(header_mapping.values())
+        # In your setup method (e.g., setup_table_tab for the DXF tab):
+        self.table_rev_tab_filterable = FilterableTable(
+            master=self.table_rev_tab,
+            data=self.bom_revisedJSON or {},   # Initially empty or loaded data.
+            columns=display_columns,
+            mapping=None,    # Map from display names to keys.
+            filter_column_default="P&ID TAG",
+            colour_mapping = None,
+        )
+        self.table_rev_tab_filterable.pack(fill="both", expand=True)
+        
+
         
         self.bind_all("<ButtonRelease-1>", self.on_global_button_release)
 
@@ -187,29 +221,35 @@ class BOMExtractorApp(tk.Tk):
         self.revised_button.grid(row=4, column=0, padx=20, pady=10, sticky='w')
 
         self.revised_label = tk.Label(self.main_tab, text="No Revised BOM uploaded")
-        self.revised_label.grid(row=5, column=0, padx=20, pady=10, sticky='w')
+        self.revised_label.grid(row=4, column=1, padx=20, pady=10, sticky='e')
 
         # Checkbox to select whether to highlight missing components (Center) 
-        self.highlight_checkbox = tk.Checkbutton(self.main_tab, text="Highlight in RED comp. in revised BOM but not in DXF", variable=self.highlight_missing)
-        self.highlight_checkbox.grid(row=4, column=1, padx=20, pady=10, sticky='e')
+        self.highlight_checkbox = tk.Checkbutton(self.main_tab, text="Highlight in RED component \n in revised BOM but not in DXF",
+                                                 variable=self.highlight_missing,
+                                                 command=self.updateTableRevBOM)
+        self.highlight_checkbox.grid(row=5, column=0, padx=20, pady=10, sticky='w')
 
         # Checkbox to select whether to import missing DXF items into Excel (Center)
-        self.import_checkbox = tk.Checkbutton(self.main_tab, text="Import DXF items, which are missing in revised BOM,\n into new Excel. Highlight in GREY", variable=self.import_missing)
-        self.import_checkbox.grid(row=5, column=1, padx=20, pady=10, sticky='e')
+        self.import_checkbox = tk.Checkbutton(self.main_tab, text="Import DXF items, which are \n missing in revised BOM,\n into new Excel. Highlight in GREY", 
+                                              variable=self.import_missing,
+                                              command=self.updateTableRevBOM)
+        self.import_checkbox.grid(row=6, column=0, padx=20, pady=10, sticky='e')
         
-        self.import_checkbox = tk.Checkbutton(self.main_tab, text="Highlight in PURPLE duplicated items in Excel", variable=self.highlight_duplicate)
-        self.import_checkbox.grid(row=6, column=1, padx=20, pady=10, sticky='e')
+        self.import_checkbox = tk.Checkbutton(self.main_tab, text="Highlight in PURPLE \n duplicated items in Excel", 
+                                              variable=self.highlight_duplicate,
+                                              command=self.updateTableRevBOM)
+        self.import_checkbox.grid(row=5, column=1, padx=20, pady=10, sticky='e')
         
         # Checkbox to select whether save new file or modifiy exisiting file
         self.import_checkbox = tk.Checkbutton(self.main_tab, text="Save as new updated excell File", variable=self.flagSaveNewExcellFile)
-        self.import_checkbox.grid(row=7, column=1, padx=20, pady=10, sticky='e')
+        self.import_checkbox.grid(row=6, column=1, padx=20, pady=10, sticky='e')
 
         # Button to Compare BOM (Bottom-Center)
         self.compare_button = tk.Button(self.main_tab, text="Compare BOM vs DXF", state=tk.DISABLED, command=self.compare_bom)
-        self.compare_button.grid(row=8, column=0, columnspan=3, padx=20, pady=20)
+        self.compare_button.grid(row=8, column=0, columnspan=1, padx=20, pady=20)
         
         self.import_dxf_button = tk.Button(self.main_tab, text="Import BOM into DXF", state=tk.DISABLED, command=self.import_BOM_into_DXF)
-        self.import_dxf_button.grid(row=8, column=0, columnspan=1, padx=20, pady=20)
+        self.import_dxf_button.grid(row=8, column=1, columnspan=1, padx=20, pady=20)
 
             
     # def upload_dxf(self):
@@ -250,118 +290,161 @@ class BOMExtractorApp(tk.Tk):
 
     #     table_frame.rowconfigure(0, weight=1)
     #     table_frame.columnconfigure(0, weight=1)
-    def setup_table_tab(self):
-        # --- Filtering Controls ---
-        # Create a frame at the top of the DXF tab for filter controls.
-        filter_frame = ttk.Frame(self.table_dxf_tab)
-        filter_frame.pack(fill="x", padx=10, pady=5)
+    # def setup_table_tab(self):
+    #     # --- Filtering Controls ---
+    #     # Create a frame at the top of the DXF tab for filter controls.
+    #     filter_frame = ttk.Frame(self.table_dxf_tab)
+    #     filter_frame.pack(fill="x", padx=10, pady=5)
         
-        ttk.Label(filter_frame, text="Filter Column:").pack(side="left", padx=5)
+    #     ttk.Label(filter_frame, text="Filter Column:").pack(side="left", padx=5)
         
-        # The options will be the friendly names (the values in header_mapping)
-        options = list(header_mapping.values())
-        self.dxf_filter_col_var = tk.StringVar(value=options[0])
-        self.column_combobox = ttk.Combobox(filter_frame, textvariable=self.dxf_filter_col_var,
-                                            values=options, state="readonly", width=15)
-        self.column_combobox.pack(side="left", padx=5)
-        self.column_combobox.bind("<<ComboboxSelected>>", self.update_dxf_filter)
+    #     # The options will be the friendly names (the values in header_mapping)
+    #     options = list(header_mapping.values())
+    #     self.dxf_filter_col_var = tk.StringVar(value=options[0])
+    #     self.column_combobox = ttk.Combobox(filter_frame, textvariable=self.dxf_filter_col_var,
+    #                                         values=options, state="readonly", width=15)
+    #     self.column_combobox.pack(side="left", padx=5)
+    #     self.column_combobox.bind("<<ComboboxSelected>>", self.update_dxf_filter)
         
-        ttk.Label(filter_frame, text="Filter:").pack(side="left", padx=5)
-        self.dxf_filter_text_var = tk.StringVar()
-        filter_entry = ttk.Entry(filter_frame, textvariable=self.dxf_filter_text_var)
-        filter_entry.pack(side="left", fill="x", expand=True, padx=5)
-        filter_entry.bind("<KeyRelease>", self.update_dxf_filter)
+    #     ttk.Label(filter_frame, text="Filter:").pack(side="left", padx=5)
+    #     self.dxf_filter_text_var = tk.StringVar()
+    #     filter_entry = ttk.Entry(filter_frame, textvariable=self.dxf_filter_text_var)
+    #     filter_entry.pack(side="left", fill="x", expand=True, padx=5)
+    #     filter_entry.bind("<KeyRelease>", self.update_dxf_filter)
         
-        # --- Table Setup ---
-        # Create a frame to hold the Treeview and its scrollbars.
-        table_frame = ttk.Frame(self.table_dxf_tab)
-        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+    #     # --- Table Setup ---
+    #     # Create a frame to hold the Treeview and its scrollbars.
+    #     table_frame = ttk.Frame(self.table_dxf_tab)
+    #     table_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Use the header mapping for the display order. Here, we'll show the friendly names.
-        self.dxf_display_columns = list(header_mapping.values())
-        # And store the "real" column keys (order) for data retrieval.
-        self.dxf_data_order = list(header_mapping.keys())
+    #     # Use the header mapping for the display order. Here, we'll show the friendly names.
+    #     self.dxf_display_columns = list(header_mapping.values())
+    #     # And store the "real" column keys (order) for data retrieval.
+    #     self.dxf_data_order = list(header_mapping.keys())
         
-        self.tree1 = ttk.Treeview(table_frame, columns=self.dxf_display_columns, show="headings")
-        self.tree1.grid(row=0, column=0, sticky="nsew")
+    #     self.tree1 = ttk.Treeview(table_frame, columns=self.dxf_display_columns, show="headings")
+    #     self.tree1.grid(row=0, column=0, sticky="nsew")
         
-        for col in self.dxf_display_columns:
-            self.tree1.heading(col, text=col)
-            self.tree1.column(col, width=100, anchor="center")
+    #     for col in self.dxf_display_columns:
+    #         self.tree1.heading(col, text=col)
+    #         self.tree1.column(col, width=80, anchor="center")
             
-        # Add vertical scrollbar.
-        vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree1.yview)
-        vsb.grid(row=0, column=1, sticky="ns")
-        self.tree1.configure(yscrollcommand=vsb.set)
+    #     # Add vertical scrollbar.
+    #     vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree1.yview)
+    #     vsb.grid(row=0, column=1, sticky="ns")
+    #     self.tree1.configure(yscrollcommand=vsb.set)
         
-        # Add horizontal scrollbar.
-        hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree1.xview)
-        hsb.grid(row=1, column=0, sticky="ew")
-        self.tree1.configure(xscrollcommand=hsb.set)
+    #     # Add horizontal scrollbar.
+    #     hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree1.xview)
+    #     hsb.grid(row=1, column=0, sticky="ew")
+    #     self.tree1.configure(xscrollcommand=hsb.set)
         
-        table_frame.rowconfigure(0, weight=1)
-        table_frame.columnconfigure(0, weight=1)
+    #     table_frame.rowconfigure(0, weight=1)
+    #     table_frame.columnconfigure(0, weight=1)
     
-    def update_dxf_filter(self, event=None):
-        """
-        Called when the filter text or selected column changes.
-        Filters self.bom_dxf and repopulates self.tree1.
-        """
-        # If no BOM data is loaded, simply return.
-        if not self.bom_dxf:
-            return
+    # def update_dxf_filter(self, event=None):
+    #     """
+    #     Called when the filter text or selected column changes.
+    #     Filters self.bom_dxf and repopulates self.tree1.
+    #     """
+    #     # If no BOM data is loaded, simply return.
+    #     if not self.bom_dxf:
+    #         return
         
-        # Invert header_mapping to map from friendly (display) name back to the actual key.
-        inv_map = {v: k for k, v in header_mapping.items()}
-        selected_display = self.dxf_filter_col_var.get()
-        # Determine the actual dictionary key for filtering.
-        filter_key = inv_map.get(selected_display, self.dxf_data_order[0])
+    #     # Invert header_mapping to map from friendly (display) name back to the actual key.
+    #     inv_map = {v: k for k, v in header_mapping.items()}
+    #     selected_display = self.dxf_filter_col_var.get()
+    #     # Determine the actual dictionary key for filtering.
+    #     filter_key = inv_map.get(selected_display, self.dxf_data_order[0])
         
-        filter_text = self.dxf_filter_text_var.get().lower()
-        filtered = {}
-        for row_id, row in self.bom_dxf.items():
-            cell_value = str(row.get(filter_key, "")).lower()
-            if filter_text in cell_value:
-                filtered[row_id] = row
-        # Store the filtered data (you might want to keep the original in self.bom_dxf).
-        self.filtered_bom_dxf = filtered
-        self.updateTableDXFFiltered()
+    #     filter_text = self.dxf_filter_text_var.get().lower()
+    #     filtered = {}
+    #     for row_id, row in self.bom_dxf.items():
+    #         cell_value = str(row.get(filter_key, "")).lower()
+    #         if filter_text in cell_value:
+    #             filtered[row_id] = row
+    #     # Store the filtered data (you might want to keep the original in self.bom_dxf).
+    #     self.filtered_bom_dxf = filtered
+    #     self.updateTableDXFFiltered()
     
-    def updateTableDXFFiltered(self):
-        """
-        Clears and repopulates self.tree1 using self.filtered_bom_dxf.
-        """
-        # Clear current items from the Treeview.
-        for item in self.tree1.get_children():
-            self.tree1.delete(item)
+    # def updateTableDXFFiltered(self):
+    #     """
+    #     Clears and repopulates self.tree1 using self.filtered_bom_dxf.
+    #     """
+    #     # Clear current items from the Treeview.
+    #     for item in self.tree1.get_children():
+    #         self.tree1.delete(item)
         
-        # Use the filtered data if available.
-        data = self.filtered_bom_dxf if hasattr(self, 'filtered_bom_dxf') else self.bom_dxf
-        if not data:
-            return
+    #     # Use the filtered data if available.
+    #     data = self.filtered_bom_dxf if hasattr(self, 'filtered_bom_dxf') else self.bom_dxf
+    #     if not data:
+    #         return
         
-        # Insert each row into the tree.
-        for row in data.values():
-            # Create a tuple of values in the order defined by self.dxf_data_order.
-            values = tuple(row.get(key, "") for key in self.dxf_data_order)
-            # Example: (optional) add a tag if you want to color certain rows.
-            tags = ()
-            # For instance, if you want to highlight rows whose "P&ID TAG" starts with "pH6":
-            if str(row.get("P&ID TAG", "")).startswith("pH6"):
-                tags = ("highlight",)
-            self.tree1.insert("", "end", values=values, tags=tags)
+    #     # Insert each row into the tree.
+    #     for row in data.values():
+    #         # Create a tuple of values in the order defined by self.dxf_data_order.
+    #         values = tuple(row.get(key, "") for key in self.dxf_data_order)
+    #         # Example: (optional) add a tag if you want to color certain rows.
+    #         tags = ()
+    #         # For instance, if you want to highlight rows whose "P&ID TAG" starts with "pH6":
+    #         if str(row.get("P&ID TAG", "")).startswith("pH6"):
+    #             tags = ("highlight",)
+    #         self.tree1.insert("", "end", values=values, tags=tags)
         
-        # Configure tag for row coloring.
-        self.tree1.tag_configure("highlight", background="lightblue")
+    #     # Configure tag for row coloring.
+    #     self.tree1.tag_configure("highlight", background="lightblue")
 
+    def update_color_mapping_2nd_table(self):
+        self.colour_mapping2={}
+        if self.highlight_missing.get():
+            return make_color_mapping(self.colour_mapping2 ,self.missing_in_dxf,"#FF0000")
+        else: 
+            return {}
+        #make_color_mapping(self.colour_mapping2 ,self.missing_in_dxf,"#CCCCCC")
+        
+    def update_color_mapping_1st_table(self):
+        self.colour_mapping1={}
+        if self.import_missing.get():
+            return make_color_mapping(self.colour_mapping1 ,self.missing_in_revised,"#CCCCCC")
+        else:
+            return {}
+        
+    def update_color_mapping_duplicates_table(self,bom_dict,colour_mapping):
+        if self.highlight_duplicate.get():
+            duplicates=find_duplicates(bom_dict, 'P&ID TAG')
+            duplicates_tags = [pid_tag for pid_tag in duplicates.keys()]
+            return make_color_mapping(colour_mapping ,duplicates_tags,"#800080")
+        else:
+            return {}
+        
+        
+        
+    def updateTableRevBOM(self):
+        #colour_mapping ={'WT204':'#FF0000'}
+        self.colour_mapping1= self.update_color_mapping_1st_table()
+        self.colour_mapping2= self.update_color_mapping_2nd_table()
+        colour_mapping11 = self.update_color_mapping_duplicates_table(self.bom_dxf,self.colour_mapping1)
+        colour_mapping22 = self.update_color_mapping_duplicates_table(self.bom_revisedJSON,self.colour_mapping2)
+        if colour_mapping11:
+            self.colour_mapping1.update(colour_mapping11)
+        if colour_mapping22:
+            print('colour_mapping22: '+str(colour_mapping22))
+            self.colour_mapping2.update(colour_mapping22)
+            
+        self.table_dxf_items_filterable.set_data(self.bom_dxf,self.colour_mapping1)
+        self.table_rev_tab_filterable.set_data(self.bom_revisedJSON,self.colour_mapping2)
+        
+        
         
     def updateTableDXF(self):
         # Insert sample data into the tree1.
+        # if self.bom_dxf:
+        #     columns = list(header_mapping.keys())
+        #     for row in self.bom_dxf.values():
+        #          values = tuple(row.get(col, "") for col in columns)
+        #          self.tree1.insert("", "end", values=values)    
         if self.bom_dxf:
-            columns = list(header_mapping.keys())
-            for row in self.bom_dxf.values():
-                 values = tuple(row.get(col, "") for col in columns)
-                 self.tree1.insert("", "end", values=values)    
+             self.table_dxf_items_filterable.set_data(self.bom_dxf)
                  
     def upload_dxf(self):
         self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
@@ -384,9 +467,11 @@ class BOMExtractorApp(tk.Tk):
         self.revised_excel_file = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
         if self.revised_excel_file:
             logging.info(f"Uploaded Revised BOM Excel file: {self.revised_excel_file}")
+            self.bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
             self.revised_label.config(text=os.path.basename(self.revised_excel_file))
             #self.compare_button.config(state=tk.NORMAL)
             self.check_ready_to_export_revised_BOM2()
+            self.updateTableRevBOM()
 
     def check_ready_to_extract(self):
         # Enable "Extract BOM" button if both DXF and Template Excel are uploaded
@@ -423,6 +508,7 @@ class BOMExtractorApp(tk.Tk):
         
            logging.info("Extracting BOM from DXF...")
            self.bom_dxf,self.docDxf = extract_bom_from_dxf(self.dwg_file)
+           self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
            
            if self.flagIgnoreWETEFE.get():
                tagsvaluesToIgnore = ['WE', 'TE', 'FE']
@@ -466,7 +552,9 @@ class BOMExtractorApp(tk.Tk):
             except Exception as e:
                 logging.error(f"Failed to export BOM: {e}")
                 messagebox.showerror("Error", f"Failed to export BOM: {e}")
-                
+    
+
+        
     def compare_bom(self):
         try:
             logging.info("Comparing BOM with DXF...")
@@ -476,16 +564,17 @@ class BOMExtractorApp(tk.Tk):
                 return
     
             # Load the revised Excel file as JSON
-            bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
+            self.bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
     
             # Convert BOM from DXF to JSON
-            bom_dxf = convert_bom_dxf_to_JSON(self.bom_dxf)
+            self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
     
             # Check if the user wants to highlight missing components
             highlight_missing = self.highlight_missing.get()
             
             # Check if the user wants to import missing items from DXF to Excel
             import_missingDXF2BOM = self.import_missing.get()
+            
             
             # Check if the user wants to highlight duplicate components
             highlight_duplicate = self.highlight_duplicate.get()
@@ -503,40 +592,65 @@ class BOMExtractorApp(tk.Tk):
                 logging.info(f"Created directory: {output_dir}")
     
             # Perform BOM comparison
-            missing_in_revised, missing_in_dxf, workbook_excel = compare_bomsJSON(
-                bom_dxf,
-                bom_revisedJSON,
+            self.missing_in_revised, self.missing_in_dxf, self.workbook_excel = compare_bomsJSON(
+                self.bom_dxf_JSON_like_xls,
+                self.bom_revisedJSON,
                 revised_excel_file=output_path,  # Save to the selected path
                 highlight_duplicate=highlight_duplicate, 
                 highlight_missing=highlight_missing,
                 import_missingDXF2BOM=import_missingDXF2BOM
-            )
-            
-            # Display comparison results
-            messagebox.showinfo("Comparison Results", f"Missing in Revised: {missing_in_revised}\nMissing in DXF: {missing_in_dxf}")
-
-            if flagSaveNewExcellFile:
-                rev_excel_file_name = os.path.basename(self.revised_excel_file)
-                default_filename = os.path.splitext(rev_excel_file_name)[0] + "_updated.xlsx"
-                output_path = filedialog.asksaveasfilename(
-                    defaultextension=".xlsx",
-                    filetypes=[("Excel files", "*.xlsx")],
-                    initialfile=default_filename,
-                    title="Save updated BOM as"
                 )
-                workbook_excel.save(output_path)  # Save changes to the Excel file
-                if not output_path:
-                    messagebox.showerror("Error", "No file selected for saving the updated BOM.")
-                    return
-            else:
-                workbook_excel.save(output_path)  # Save changes to the Excel file
+            
+            #self.update_color_mapping_2nd_table()
+            #print(self.colour_mapping2)
+            
+            self.updateTableRevBOM()
+
+            
+            # print('missing_in_revised: '+str(missing_in_revised))
+            # print('missing_in_dxf: '+str(missing_in_dxf))
+            # Display comparison results
+            messagebox.showinfo("Comparison Results", f"Missing in Revised: {self.missing_in_revised}\nMissing in DXF: {self.missing_in_dxf}")
+
+            # if flagSaveNewExcellFile:
+            #     rev_excel_file_name = os.path.basename(self.revised_excel_file)
+            #     default_filename = os.path.splitext(rev_excel_file_name)[0] + "_updated.xlsx"
+            #     output_path = filedialog.asksaveasfilename(
+            #         defaultextension=".xlsx",
+            #         filetypes=[("Excel files", "*.xlsx")],
+            #         initialfile=default_filename,
+            #         title="Save updated BOM as"
+            #     )
+            #     workbook_excel.save(output_path)  # Save changes to the Excel file
+            #     if not output_path:
+            #         messagebox.showerror("Error", "No file selected for saving the updated BOM.")
+            #         return
+            # else:
+            #     workbook_excel.save(output_path)  # Save changes to the Excel file
                 
            
         except Exception as e:
             logging.error(f"An error occurred during BOM comparison: {e}")
             messagebox.showerror("Error", f"Failed to compare BOM: {e}")
 
-
+    def exportNewExcellFile(self):
+        workbook_excel=self.workbook_excel
+        flagSaveNewExcellFile = self.flagSaveNewExcellFile.get()
+        if flagSaveNewExcellFile:
+            rev_excel_file_name = os.path.basename(self.revised_excel_file)
+            default_filename = os.path.splitext(rev_excel_file_name)[0] + "_updated.xlsx"
+            output_path = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx")],
+                initialfile=default_filename,
+                title="Save updated BOM as"
+            )
+            workbook_excel.save(output_path)  # Save changes to the Excel file
+            if not output_path:
+                messagebox.showerror("Error", "No file selected for saving the updated BOM.")
+                return
+        else:
+            workbook_excel.save(output_path)  # Save changes to the Excel file
     
     def save_dxf_windows(self):
         """

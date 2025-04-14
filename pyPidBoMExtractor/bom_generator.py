@@ -26,6 +26,7 @@ tags_xls2dxf= {'P&ID TAG':'P&ID TAG','Type':'TYPE', 'C type':'CONNECTIONTYPE', '
                }
 tags_dxf2xls = {value: key for key, value in tags_xls2dxf.items()}
 header_mapping.update(tags_dxf2xls)
+header_mapping_reverse = {value: key for key, value in header_mapping.items()}
 
 
 def filterBOM_Ignore(bom,tagToIgnore,valuesToIgnore):
@@ -141,21 +142,39 @@ def print_bom(bom):
         print(f"{it:<3}|{L:<4}|{N:<5}|{D:<4}|{pid_TAG:<10}|{comp_type:<30}|{description:<30}")
 
 
-def sortingBOM_dict(bom_dxf_,bytag = '' ):
-    bom_dxf = bom_dxf_.copy()
+# def sortingBOM_dict(bom_dxf,bytag = '' ):
+#     bom_dxf 
     
-    bom_dxf_items = list(bom_dxf.items())
+#     # sort_key_for_pid_tag(tag)
+#     bom_dxf_items = list(bom_dxf.items())
         
-    bom_dxf_items_sorted = sorted(bom_dxf_items, key=lambda x: x[1].get(bytag, ''))
+#     bom_dxf_items_sorted = sorted(bom_dxf_items, key=lambda x: x[1].get(bytag, ''))
     
-    sorted_bom = {}
-    for i_ in range(len(bom_dxf_items_sorted)):
-        i = i_+1
-        item = bom_dxf_items_sorted[i_][1]
-        item['count'] = i
-        sorted_bom[i] = item
-    return sorted_bom
+#     sorted_bom = {}
+#     for i_ in range(len(bom_dxf_items_sorted)):
+#         i = i_+1
+#         item = bom_dxf_items_sorted[i_][1]
+#         item['count'] = i
+#         sorted_bom[i] = item
+#     return sorted_bom
     
+def sort_bom_by_pid_tag(bom_dict):
+    """
+    Sort the BOM dictionary by the 'P&ID TAG' field using sort_key_for_pid_tag.
+    
+    Args:
+        bom_dict (dict): A dictionary where values are row dictionaries containing
+                         a "P&ID TAG" field.
+                         
+    Returns:
+        dict: A new dictionary with entries sorted by the 'P&ID TAG'.
+              (Python 3.7+ dictionaries preserve insertion order.)
+    """
+    sorted_items = sorted(
+        bom_dict.items(),
+        key=lambda item: sort_key_for_pid_tag(item[1].get("P&ID TAG", ""))
+    )
+    return {key: value for key, value in sorted_items}
     
 def export_bom_to_excel(bom_data, template_path, output_path, highlight_duplicate=False):
     # Load the template file
@@ -244,12 +263,12 @@ def load_bom_from_excel_to_JSON(file_path):
     # Iterate over rows, starting from the second row (assuming the first row is the header)
     for i, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=1):
         
-        if all(cell is None or cell == '' for cell in row):
+        if all(cell is None or cell == '' or cell == 0 for cell in row):
             continue  # Skip this row if it is empty
         row_data = {headers[j]: (row[j] if row[j] is not None else '') for j in range(len(headers))}
         
         # Convert 'N' to string after replacing NaN (or empty) values with 0
-        row_data['N'] = str(row_data['N']) if row_data['N'] != '' else '0'
+        row_data['N'] = str(row_data['N']) if row_data['N'] != '' else ''
         
         # Convert 'D' to an empty string if NaN or None
         row_data['D'] = str(row_data['D']) if row_data['D'] != '' else ''
@@ -260,9 +279,12 @@ def load_bom_from_excel_to_JSON(file_path):
         # Add the row's data to the bom_data dictionary with the row number as the key
         bom_data[i] = row_data
     
-    bom_data_sorted = sortingBOM_dict(bom_data,bytag = 'P&ID TAG' )
+    
+    #bom_data = sortingBOM_dict(bom_data,bytag = 'P&ID TAG' )
+    bom_data = sort_bom_by_pid_tag(bom_data)
+
     # Return data in JSON-like dictionary format with line numbers as keys
-    return bom_data_sorted
+    return bom_data
 
 # def convert_bom_dxf_to_dataframe(bom_dxf):
 #     """ Convert BOM dictionary from DXF to a pandas DataFrame. """
@@ -435,7 +457,46 @@ def convert_bom_dxf_to_JSON(bom_dxf):
     
 #     return missing_in_revised, missing_in_dxf
 
+def find_duplicates(bom_dict, field):
+    """
+    Find duplicate rows in bom_dict based on a given field.
 
+    Args:
+        bom_dict (dict): A dictionary where keys are row identifiers and values are dictionaries.
+        field (str): The field name to check duplicates on (e.g., "P&ID TAG").
+
+    Returns:
+        dict: A dictionary mapping each duplicate field value to a list of row IDs (keys) that share that value.
+              Only field values that occur more than once are included.
+    """
+    seen = {}
+    duplicates = {}
+    
+    for row_id, row in bom_dict.items():
+        value = row.get(field)
+        if value in seen:
+            # First duplicate occurrence: add the already-seen row.
+            if value not in duplicates:
+                duplicates[value] = [seen[value]]
+            duplicates[value].append(row_id)
+        else:
+            seen[value] = row_id
+
+    return duplicates
+
+def make_color_mapping(colour_mapping ,list_tag,color):
+    if not(isinstance(colour_mapping, dict)):
+        colour_mapping={}
+    if list_tag:
+        list_tag_list = list(list_tag)
+        for key_tag in list_tag_list:
+            colour_mapping.update({key_tag:color })
+        return colour_mapping
+    else: 
+        return {}
+    
+    
+    
 
 def compare_bomsJSON(
     bom_dxf, 
@@ -456,11 +517,13 @@ def compare_bomsJSON(
         highlight_missing: Flag to trigger highlighting of missing components.
         import_missingDXF2BOM: Flag to trigger import of missing components.
     """
-    sheet = None
-    if (highlight_missing or import_missingDXF2BOM) and revised_excel_file:
-        workbook = openpyxl.load_workbook(revised_excel_file)
-        sheet = workbook.active
+    # sheet = None
+    # if (highlight_missing or import_missingDXF2BOM) and revised_excel_file:
+    #     workbook = openpyxl.load_workbook(revised_excel_file)
+    #     sheet = workbook.active
         
+    workbook = openpyxl.load_workbook(revised_excel_file)
+    sheet = workbook.active
 
     # Filter bom_dxf and bom_revised to include only entries with 'L', 'N', 'D', 'P&ID TAG' present and not empty
     def filter_bom(bom):
@@ -498,6 +561,8 @@ def compare_bomsJSON(
     # Add missing items from DXF to Excel if requested
     if missing_in_revised and import_missingDXF2BOM and sheet:
         add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_filtered)
+    
+    
     
     # sorting
     sort_rows_by_pid_tag(sheet)
@@ -683,27 +748,31 @@ def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
 #                 sheet.cell(row=i, column=j).value = value
 
 
+    
 def sort_key_for_pid_tag(tag):
     """
     Generate a sorting key from a P&ID TAG string.
 
-    The key is a tuple: (number, prefix, suffix) where:
-      - number is the numeric part parsed as an integer,
+    The key is a tuple: (prefix, number, suffix) where:
       - prefix is the initial alphabetic part in lowercase,
+      - number is the numeric part parsed as an integer,
       - suffix is the remaining alphabetic part in lowercase.
       
     If the tag doesn't match the expected pattern, it returns a key
     that sorts the tag at the end.
     """
-    # Match letters, digits, then optional trailing letters at the end of the string.
+    tag=str(tag)
     pattern = re.compile(r"^([A-Za-z]+)(\d+)([A-Za-z]*)$")
     match = pattern.match(tag or "")
     if match:
         prefix, num_str, suffix = match.groups()
-        # return (int(num_str), prefix.lower(), suffix.lower())
-        return ( prefix.lower(), int(num_str), suffix.lower())
+        return (prefix.lower(), int(num_str), suffix.lower())
     else:
-        return (float('inf'), tag.lower())
+        # Return a triple that always sorts after valid tags.
+        # "{" comes after "z" in ASCII, and float('inf') ensures numeric value is highest.
+        #return (float('inf'), tag.lower())
+        #return (0, tag.lower(), 0)
+        return ('@',-float('inf'), tag.lower())
 
 def sort_rows_by_pid_tag(sheet):
     """Sort rows in the Excel sheet by 'P&ID TAG' using a custom sort key, ignoring empty rows, and renumber the '#' column."""

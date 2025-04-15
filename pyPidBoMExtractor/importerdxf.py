@@ -52,10 +52,11 @@ def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf):
                 
                 if entity_dxf_to_modify:
                     for key_xls in tags_xls2dxf.keys():
-                        key_dxf = tags_xls2dxf[key_xls]
-                        text_xls = str(item_xls.get(key_xls))
-                        text_xls = text_xls.strip()
-                        update_tag_value_in_block(text_xls, key_dxf, entity_dxf_to_modify)
+                        if key_xls != 'P&ID TAG':
+                            key_dxf = tags_xls2dxf[key_xls]
+                            text_xls = str(item_xls.get(key_xls))
+                            text_xls = text_xls.strip()
+                            update_tag_value_in_block(text_xls, key_dxf, entity_dxf_to_modify)
                 else: 
                     rows_xls_no.append()
     return rows_xls_no

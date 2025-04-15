@@ -35,6 +35,7 @@ class BOMExtractorApp(tk.Tk):
         self.colour_mapping2 = None
         self.missing_in_revised = None
         self.missing_in_dxf = None
+        self.workbook_excel = None
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
         self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
@@ -53,7 +54,7 @@ class BOMExtractorApp(tk.Tk):
         self.notebook.add(self.main_tab, text="Main")
         self.notebook.add(self.table_dxf_tab, text="BOM Table dxf")
         self.notebook.add(self.table_rev_tab, text="BOM Table revised")
-        self.notebook.add(self.table_missing_tab, text="import DXF")
+        #self.notebook.add(self.table_missing_tab, text="import DXF")
         
         
         # UI Setup
@@ -97,18 +98,32 @@ class BOMExtractorApp(tk.Tk):
         # Create the menu bar
         menubar = tk.Menu(self)
         
-
-        # File menu
+        # Create the File menu.
         file_menu = tk.Menu(menubar, tearoff=0)
+        
         file_menu.add_command(label="Load settings", command=self.load_settings)
         file_menu.add_command(label="Save settings", command=self.save_settings)
         file_menu.add_separator()
+        # Create a "Save" submenu.
+        save_menu = tk.Menu(file_menu, tearoff=0)
+        
+        save_menu.add_separator()
+        save_menu.add_command(label="Save revised xls BOM", command=self.exportNewExcellFile)
+        save_menu.add_separator()
+        save_menu.add_command(label="Save updated DXF", command=self.save_dxf_windows)
+        
+        # Add the Save cascade to the File menu.
+        file_menu.add_cascade(label="Save", menu=save_menu)
+        
+        file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit)
+        
+        # Add File menu to the menubar.
         menubar.add_cascade(label="File", menu=file_menu)
         
-        # You can add other menus (e.g., Help, About) as needed
+        # Create a Help menu.
         help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="About", command=self.show_about)  # Define show_about if desired
+        help_menu.add_command(label="About", command=self.show_about)
         menubar.add_cascade(label="Help", menu=help_menu)
         
         self.config(menu=menubar)
@@ -612,7 +627,7 @@ class BOMExtractorApp(tk.Tk):
             # print('missing_in_dxf: '+str(missing_in_dxf))
             # Display comparison results
             messagebox.showinfo("Comparison Results", f"Missing in Revised: {self.missing_in_revised}\nMissing in DXF: {self.missing_in_dxf}")
-
+            
             # if flagSaveNewExcellFile:
             #     rev_excel_file_name = os.path.basename(self.revised_excel_file)
             #     default_filename = os.path.splitext(rev_excel_file_name)[0] + "_updated.xlsx"
@@ -635,6 +650,10 @@ class BOMExtractorApp(tk.Tk):
             messagebox.showerror("Error", f"Failed to compare BOM: {e}")
 
     def exportNewExcellFile(self):
+        if self.workbook_excel is None:
+            logging.error("BOM has not been compared yet.")
+            messagebox.showerror("Error", "BOM must be compared before saving.")
+            return
         workbook_excel=self.workbook_excel
         flagSaveNewExcellFile = self.flagSaveNewExcellFile.get()
         if flagSaveNewExcellFile:
@@ -694,7 +713,7 @@ class BOMExtractorApp(tk.Tk):
         bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
         rows_xls_no = import_BOMjson_into_DXF(bom_revisedJSON,self.bom_dxf)
         
-        self.save_dxf_windows()
+        #self.save_dxf_windows()
         return None   
     
 if __name__ == "__main__":

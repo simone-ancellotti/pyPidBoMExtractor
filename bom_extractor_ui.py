@@ -479,7 +479,9 @@ class BOMExtractorApp(tk.Tk):
 
     def upload_revised_bom(self):
         # Open file dialog to select a revised BOM Excel file
-        self.revised_excel_file = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
+        new_imported_xls_file_rev = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
+        if new_imported_xls_file_rev != '':
+            self.revised_excel_file = new_imported_xls_file_rev
         if self.revised_excel_file:
             logging.info(f"Uploaded Revised BOM Excel file: {self.revised_excel_file}")
             self.bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)

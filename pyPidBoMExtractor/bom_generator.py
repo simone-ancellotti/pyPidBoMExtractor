@@ -569,15 +569,39 @@ def compare_bomsJSON(
                 
     return missing_in_revised, missing_in_dxf
 
-def update_XLS_add_missing_items_highlight(  workbook_xls,
-                                           bom_dxf,
-                                           bom_revisedJSON,
-                                           missing_in_revised, 
-                                           missing_in_dxf,
-                                           highlight_duplicate=False, 
-                                           highlight_missing=False,  
-                                           import_missingDXF2BOM=False):
-    
+def update_XLS_add_missing_items_highlight(
+        workbook_xls,
+        bom_dxf,
+        bom_revisedJSON,
+        missing_in_revised, 
+        missing_in_dxf,
+        highlight_duplicate=False, 
+        highlight_missing=False,  
+        import_missingDXF2BOM=False,
+        missing_in_dxf_color="FF0000",         # Default red
+        missing_in_revised_color="CCCCCC",      # Default gray
+        duplicate_color="800080"                # Default purple
+    ):
+    """
+    Updates the Excel workbook by adding missing items and highlighting components based on various criteria.
+
+    Args:
+        workbook_xls: An openpyxl workbook object.
+        bom_dxf: Dictionary of DXF BOM data.
+        bom_revisedJSON: Dictionary of revised BOM data (JSON structure).
+        missing_in_revised: A list of items missing in revised BOM.
+        missing_in_dxf: A list of items missing in DXF BOM.
+        highlight_duplicate (bool): Flag to highlight duplicate P&ID TAG values.
+        highlight_missing (bool): Flag to highlight missing components.
+        import_missingDXF2BOM (bool): Flag that indicates whether to import missing DXF items.
+        missing_in_dxf_color (str): Hex color value for highlighting missing items in DXF.
+        missing_in_revised_color (str): Hex color value for highlighting missing items in revised BOM.
+        duplicate_color (str): Hex color value for highlighting duplicate P&ID TAG values.
+
+    Returns:
+        The updated workbook_xls.
+    """
+                                                
     #workbook = openpyxl.load_workbook(revised_excel_file)
     sheet = workbook_xls.active
     
@@ -591,20 +615,21 @@ def update_XLS_add_missing_items_highlight(  workbook_xls,
     # sorting
     sort_rows_by_pid_tag(sheet)
     
+    
     # highlight
     if missing_in_dxf and highlight_missing and  sheet:
         print("\nHighlighting Components in revised BOM but not in DXF BOM:")
         for item in missing_in_dxf:
-            highlight_missing_item_in_excel(item, sheet,color = "FF0000") # Red color RGB
+            highlight_missing_item_in_excel(item, sheet,color = missing_in_dxf_color) # Red color RGB
     if missing_in_revised and import_missingDXF2BOM and sheet and highlight_missing:
         print("\nHighlighting Components in DXF but not in the revised BOM:")
         for item in missing_in_revised:
-            highlight_missing_item_in_excel(item, sheet,color = "CCCCCC") # Gray color RGB
+            highlight_missing_item_in_excel(item, sheet,color = missing_in_revised_color) # Gray color RGB
 
    # Trigger duplicate highlighting if the flag is true
     if highlight_duplicate and sheet:
         print("\nHighlighting Duplicate 'P&ID TAG' Values in Purple:")
-        highlight_duplicate_tags_in_excel(sheet, 'P&ID TAG', color="800080")  # Purple
+        highlight_duplicate_tags_in_excel(sheet, 'P&ID TAG', color=duplicate_color)  # Purple
         
     return workbook_xls
 
@@ -719,38 +744,38 @@ def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
             value = dxf_comp.get(header, '')
             sheet.cell(row=row_num, column=col_index).value = value
 
-def add_missing_items_to_excel_old(missing_items, sheet, bom_dxf):
-    """Add missing items from the DXF BOM to the Excel sheet and highlight them in grey."""
-    # Create a mapping of column headers to their indices
-    header_mapping_xls = {sheet.cell(row=1, column=col).value: col for col in range(1, sheet.max_column + 1)}
+# def add_missing_items_to_excel_old(missing_items, sheet, bom_dxf):
+#     """Add missing items from the DXF BOM to the Excel sheet and highlight them in grey."""
+#     # Create a mapping of column headers to their indices
+#     header_mapping_xls = {sheet.cell(row=1, column=col).value: col for col in range(1, sheet.max_column + 1)}
 
-    # Helper function to check if a row is empty
-    def is_row_empty(row):
-        return all(cell.value in (None, '') for cell in row)
+#     # Helper function to check if a row is empty
+#     def is_row_empty(row):
+#         return all(cell.value in (None, '') for cell in row)
 
-    # Iterate through the missing items
-    for item in missing_items:
-        # Find the component in bom_dxf
-        dxf_comp = next(comp for comp in bom_dxf.values() if comp['P&ID TAG'] == item)
+#     # Iterate through the missing items
+#     for item in missing_items:
+#         # Find the component in bom_dxf
+#         dxf_comp = next(comp for comp in bom_dxf.values() if comp['P&ID TAG'] == item)
 
-        # Search for the first available empty row starting from row 2 (assuming row 1 has headers)
-        row_num = None
-        for row in range(2, sheet.max_row + 1):
-            if is_row_empty(sheet[row]):
-                row_num = row
-                break
+#         # Search for the first available empty row starting from row 2 (assuming row 1 has headers)
+#         row_num = None
+#         for row in range(2, sheet.max_row + 1):
+#             if is_row_empty(sheet[row]):
+#                 row_num = row
+#                 break
 
-        # If no empty row was found, append to the end of the sheet
-        if row_num is None:
-            row_num = sheet.max_row + 1
+#         # If no empty row was found, append to the end of the sheet
+#         if row_num is None:
+#             row_num = sheet.max_row + 1
 
-        # Write data to the identified row (either an existing empty row or a new row)
-        for header, col_index in header_mapping_xls.items():
-            value = dxf_comp.get(header, '')
-            sheet.cell(row=row_num, column=col_index).value = value
+#         # Write data to the identified row (either an existing empty row or a new row)
+#         for header, col_index in header_mapping_xls.items():
+#             value = dxf_comp.get(header, '')
+#             sheet.cell(row=row_num, column=col_index).value = value
 
-            # Highlight the new row in grey
-            #sheet.cell(row=row_num, column=col_index).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+#             # Highlight the new row in grey
+#             #sheet.cell(row=row_num, column=col_index).fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
 
 # def sort_rows_by_pid_tag(sheet):
 #     """Sort rows in the Excel sheet by 'P&ID TAG' column, ignoring empty rows and renumbering the '#' column."""

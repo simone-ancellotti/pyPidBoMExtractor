@@ -37,6 +37,9 @@ class BOMExtractorApp(tk.Tk):
         self.bom_dxf_JSON_like_xls= {}
         self.colour_mapping1 = None
         self.colour_mapping2 = None
+        self.missing_in_dxf_color="FF0000"         # Default red
+        self.missing_in_revised_color="CCCCCC"      # Default gray
+        self.duplicate_color="800080"                # Default purple
         self.missing_in_revised = None
         self.missing_in_dxf = None
         self.workbook_excel = None
@@ -135,7 +138,7 @@ class BOMExtractorApp(tk.Tk):
         
     def show_about(self):
         # Show an About dialog with version information
-        about_text = "pyPidBoMExtractor Version 2.0\nDeveloped by Simone Ancellotti\n© 2025"
+        about_text = "pyPidBoMExtractor Version 2.1\nDeveloped by Simone Ancellotti\n© 2025"
         messagebox.showinfo("About", about_text)
 
     def save_settings(self):
@@ -418,7 +421,8 @@ class BOMExtractorApp(tk.Tk):
     def update_color_mapping_2nd_table(self):
         self.colour_mapping2={}
         if self.highlight_missing.get():
-            return make_color_mapping(self.colour_mapping2 ,self.missing_in_dxf,"#FF0000")
+            color_sharp = "#"+self.missing_in_dxf_color
+            return make_color_mapping(self.colour_mapping2 ,self.missing_in_dxf,color_sharp)
         else: 
             return {}
         #make_color_mapping(self.colour_mapping2 ,self.missing_in_dxf,"#CCCCCC")
@@ -426,7 +430,8 @@ class BOMExtractorApp(tk.Tk):
     def update_color_mapping_1st_table(self):
         self.colour_mapping1={}
         if self.import_missing.get():
-            return make_color_mapping(self.colour_mapping1 ,self.missing_in_revised,"#CCCCCC")
+            color_sharp = "#"+self.missing_in_revised_color
+            return make_color_mapping(self.colour_mapping1 ,self.missing_in_revised,color_sharp)
         else:
             return {}
         
@@ -434,7 +439,8 @@ class BOMExtractorApp(tk.Tk):
         if self.highlight_duplicate.get() and bom_dict and isinstance(colour_mapping,dict):
             duplicates=find_duplicates(bom_dict, 'P&ID TAG')
             duplicates_tags = [pid_tag for pid_tag in duplicates.keys()]
-            return make_color_mapping(colour_mapping ,duplicates_tags,"#800080")
+            color_sharp = "#"+self.duplicate_color
+            return make_color_mapping(colour_mapping ,duplicates_tags,color_sharp)
         else:
             return {}
         
@@ -677,7 +683,10 @@ class BOMExtractorApp(tk.Tk):
                     missing_in_dxf = self.missing_in_dxf,
                     highlight_duplicate=highlight_duplicate, 
                     highlight_missing=highlight_missing,
-                    import_missingDXF2BOM=import_missingDXF2BOM
+                    import_missingDXF2BOM=import_missingDXF2BOM,
+                    missing_in_dxf_color="FF0000",         
+                    missing_in_revised_color="CCCCCC",      
+                    duplicate_color="800080"                
                     )
         
         

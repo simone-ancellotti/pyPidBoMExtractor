@@ -715,11 +715,15 @@ class BOMExtractorApp(tk.Tk):
                 return
             else: 
                 self.workbook_excel.save(output_path)  # Save changes to the Excel file
-                print("Revised xls BOM has been saved in a new xls file.")
+                msg_save = "Revised XLS BOM has been successfully saved in a new XLS file."
+                print(msg_save)
+                messagebox.showinfo("XLS Saved", msg_save)
         else:
             self.workbook_excel.save(output_path)  # Save changes to the Excel file
             self.workbook.close()
-            print("Revised xls BOM has been saved in the same imported xls file.")
+            msg_save = "Revised xls BOM has been saved in the same imported xls file."
+            print(msg_save)
+            messagebox.showinfo("XLS Saved", msg_save)
     
     def save_dxf_windows(self):
         """

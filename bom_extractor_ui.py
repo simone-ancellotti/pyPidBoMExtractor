@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, PhotoImage
 import logging
 # Import the pyPidBoMExtractor package
 from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
@@ -22,7 +22,10 @@ class BOMExtractorApp(tk.Tk):
         super().__init__()
         self.title("BOM Extractor Application")
         self.geometry("610x440")  # Adjusted window size for better layout
-
+        
+        icon_image = PhotoImage(file="bom_valve_icon.png")
+        self.iconphoto(True, icon_image)
+        
         # Variables to hold file paths and options
         self.dwg_file = None
         self.template_BOM_xls_path = None
@@ -130,7 +133,7 @@ class BOMExtractorApp(tk.Tk):
         
     def show_about(self):
         # Show an About dialog with version information
-        about_text = "pyPidBoMExtractor Version 1.0\nDeveloped by Simone Ancellotti\n© 2025"
+        about_text = "pyPidBoMExtractor Version 2.0\nDeveloped by Simone Ancellotti\n© 2025"
         messagebox.showinfo("About", about_text)
 
     def save_settings(self):

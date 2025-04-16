@@ -4,11 +4,12 @@ import logging
 # Import the pyPidBoMExtractor package
 from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
-from pyPidBoMExtractor.bom_generator import header_mapping, header_mapping_reverse ,make_color_mapping,find_duplicates
+from pyPidBoMExtractor.bom_generator import header_mapping, header_mapping_reverse ,make_color_mapping,find_duplicates,update_XLS_add_missing_items_highlight
 from pyPidBoMExtractor.importerdxf import import_BOMjson_into_DXF
 from pyPidBoMExtractor.filterable_table import FilterableTable
 import os
 import json
+import openpyxl
 
 # pyinstaller --onefile --noconsole --strip --exclude-module=numpy bom_extractor_ui.py
 
@@ -39,6 +40,7 @@ class BOMExtractorApp(tk.Tk):
         self.missing_in_revised = None
         self.missing_in_dxf = None
         self.workbook_excel = None
+        self.flagExcelAldreadyCompared = False
         self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
         self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
@@ -485,6 +487,7 @@ class BOMExtractorApp(tk.Tk):
         new_imported_xls_file_rev = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
         if new_imported_xls_file_rev != '':
             self.revised_excel_file = new_imported_xls_file_rev
+            self.flagExcelAldreadyCompared = False
         if self.revised_excel_file:
             logging.info(f"Uploaded Revised BOM Excel file: {self.revised_excel_file}")
             self.bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
@@ -590,38 +593,28 @@ class BOMExtractorApp(tk.Tk):
             # Convert BOM from DXF to JSON
             self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
     
-            # Check if the user wants to highlight missing components
-            highlight_missing = self.highlight_missing.get()
-            
-            # Check if the user wants to import missing items from DXF to Excel
-            import_missingDXF2BOM = self.import_missing.get()
-            
-            
-            # Check if the user wants to highlight duplicate components
-            highlight_duplicate = self.highlight_duplicate.get()
-            
-            flagSaveNewExcellFile = self.flagSaveNewExcellFile.get()
-    
-            # If the "Save As New" checkbox is ticked, prompt for a new file name
 
-            output_path = self.revised_excel_file
-            
-            # Check if the directory exists; if not, create it
-            output_dir = os.path.dirname(output_path)
-            if not os.path.exists(output_dir):
-                os.makedirs(output_dir)
-                logging.info(f"Created directory: {output_dir}")
     
             # Perform BOM comparison
-            self.missing_in_revised, self.missing_in_dxf, self.workbook_excel = compare_bomsJSON(
+            # self.missing_in_revised, self.missing_in_dxf, self.workbook_excel = compare_bomsJSON(
+            #     self.bom_dxf_JSON_like_xls,
+            #     self.bom_revisedJSON,
+            #     revised_excel_file=output_path,  # Save to the selected path
+            #     highlight_duplicate=highlight_duplicate, 
+            #     highlight_missing=highlight_missing,
+            #     import_missingDXF2BOM=import_missingDXF2BOM
+            #     )
+            # Perform BOM comparison without modifying the xls file
+            self.missing_in_revised, self.missing_in_dxf = compare_bomsJSON(
                 self.bom_dxf_JSON_like_xls,
                 self.bom_revisedJSON,
-                revised_excel_file=output_path,  # Save to the selected path
-                highlight_duplicate=highlight_duplicate, 
-                highlight_missing=highlight_missing,
-                import_missingDXF2BOM=import_missingDXF2BOM
+                # highlight_duplicate=highlight_duplicate, 
+                # highlight_missing=highlight_missing,
+                # import_missingDXF2BOM=import_missingDXF2BOM
                 )
             
+            self.flagExcelAldreadyCompared = True
+                
             #self.update_color_mapping_2nd_table()
             #print(self.colour_mapping2)
             
@@ -655,12 +648,49 @@ class BOMExtractorApp(tk.Tk):
             messagebox.showerror("Error", f"Failed to compare BOM: {e}")
 
     def exportNewExcellFile(self):
-        if self.workbook_excel is None:
+        #if self.workbook_excel is None:
+        if not(self.flagExcelAldreadyCompared):
             logging.error("BOM has not been compared yet.")
             messagebox.showerror("Error", "BOM must be compared before saving.")
             return
-        workbook_excel=self.workbook_excel
+        # Check if the user wants to highlight missing components
+        highlight_missing = self.highlight_missing.get()
+        
+        # Check if the user wants to import missing items from DXF to Excel
+        import_missingDXF2BOM = self.import_missing.get()
+        
+        
+        # Check if the user wants to highlight duplicate components
+        highlight_duplicate = self.highlight_duplicate.get()
+        
+        
+        # If the "Save As New" checkbox is ticked, prompt for a new file name
+        output_path = self.revised_excel_file
+        self.workbook_excel = openpyxl.load_workbook(output_path)
+
+        print("Preparing for saving revised xls BOM...")
+        update_XLS_add_missing_items_highlight( 
+                    workbook_xls=self.workbook_excel,  
+                    bom_dxf = self.bom_dxf_JSON_like_xls,
+                    bom_revisedJSON = self.bom_revisedJSON,
+                    missing_in_revised = self.missing_in_revised, 
+                    missing_in_dxf = self.missing_in_dxf,
+                    highlight_duplicate=highlight_duplicate, 
+                    highlight_missing=highlight_missing,
+                    import_missingDXF2BOM=import_missingDXF2BOM
+                    )
+        
+        
         flagSaveNewExcellFile = self.flagSaveNewExcellFile.get()
+
+
+        
+        # Check if the directory exists; if not, create it
+        output_dir = os.path.dirname(output_path)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+            logging.info(f"Created directory: {output_dir}")
+            
         if flagSaveNewExcellFile:
             rev_excel_file_name = os.path.basename(self.revised_excel_file)
             default_filename = os.path.splitext(rev_excel_file_name)[0] + "_updated.xlsx"
@@ -670,12 +700,17 @@ class BOMExtractorApp(tk.Tk):
                 initialfile=default_filename,
                 title="Save updated BOM as"
             )
-            workbook_excel.save(output_path)  # Save changes to the Excel file
-            if not output_path:
+            
+            if not output_path or output_path == "":
                 messagebox.showerror("Error", "No file selected for saving the updated BOM.")
                 return
+            else: 
+                self.workbook_excel.save(output_path)  # Save changes to the Excel file
+                print("Revised xls BOM has been saved in a new xls file.")
         else:
-            workbook_excel.save(output_path)  # Save changes to the Excel file
+            self.workbook_excel.save(output_path)  # Save changes to the Excel file
+            self.workbook.close()
+            print("Revised xls BOM has been saved in the same imported xls file.")
     
     def save_dxf_windows(self):
         """

@@ -9,7 +9,8 @@ import tkinter as tk
 from tkinter import ttk
 
 class FilterableTable(ttk.Frame):
-    def __init__(self, master, data, columns, mapping=None, filter_column_default=None, colour_mapping=None, **kwargs):
+    def __init__(self, master, data, columns, mapping=None, filter_column_default=None, 
+                 colour_mapping=None, column_widths=None, default_width=100,**kwargs):
         """
         A general-purpose widget that displays tabular data with filtering controls.
         
@@ -20,6 +21,8 @@ class FilterableTable(ttk.Frame):
             mapping (dict, optional): Mapping from display column names to the data's keys.
                                       If omitted, it is assumed display names match the data keys.
             filter_column_default (str, optional): Default filter column (display name).
+            column_widths (dict, optional): Dictionary mapping display column names to desired widths.
+            default_width (int): Width to use if a column is not specified in column_widths.
         """
         super().__init__(master, **kwargs)
         self.data = data
@@ -29,6 +32,9 @@ class FilterableTable(ttk.Frame):
         self.mapping = mapping if mapping is not None else {col: col for col in columns}
         self.mapping_reversed = {value: key for key, value in self.mapping.items()}
         self.colour_mapping = colour_mapping
+        
+        self.column_widths = column_widths if column_widths is not None else {}
+        self.default_width = default_width
         
         # Set default filter column.
         self.filter_column = filter_column_default if filter_column_default else columns[0]
@@ -69,7 +75,8 @@ class FilterableTable(ttk.Frame):
         self.tree.grid(row=0, column=0, sticky="nsew")
         for col in self.columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100, anchor="center")
+            width = self.column_widths.get(col, self.default_width)
+            self.tree.column(col, width=width, anchor="center")
         
         # Vertical scrollbar.
         vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)

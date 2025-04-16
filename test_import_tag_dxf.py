@@ -45,7 +45,7 @@ dwg_file = r"./tests/test1/Schema di funzionamento_rev1.1.dxf"
 bom_dxf,doc = extract_bom_from_dxf(dwg_file)
 
 file_xls_path = r"./tests/test1/BOM_1.1_rev.xlsx"
-bom_revisedJSON = load_bom_from_excel_to_JSON(file_xls_path)
+bom_revisedJSON,workbook = load_bom_from_excel_to_JSON(file_xls_path)
 
 
 

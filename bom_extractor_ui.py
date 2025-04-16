@@ -44,8 +44,8 @@ class BOMExtractorApp(tk.Tk):
         self.missing_in_dxf = None
         self.workbook_excel = None
         self.flagExcelAldreadyCompared = False
-        self.highlight_missing = tk.BooleanVar()  # Variable for highlight checkbox
-        self.import_missing = tk.BooleanVar()  # Variable for import missing checkbox
+        self.highlight_missing = tk.BooleanVar(value=True)  # Variable for highlight checkbox
+        self.import_missing = tk.BooleanVar(value=True)  # Variable for import missing checkbox
         self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
         self.flagSaveNewExcellFile = tk.BooleanVar(value=True) 
         self.flagIgnoreWETEFE = tk.BooleanVar(value=False)
@@ -70,7 +70,18 @@ class BOMExtractorApp(tk.Tk):
         self.create_menu() 
         #self.setup_table_tab()
         
-        
+        column_widths = {
+            "#": 40,
+            "L": 40,
+            "D": 40,
+            "N": 60,
+            "P&ID TAG": 80,
+            "Type": 150,
+            "Description": 200,
+            "Material": 100,
+            "Brand": 100,
+            "Country of Origin": 130
+        }
         display_columns = list(header_mapping.values())
         self.table_dxf_items_filterable = FilterableTable(
             master=self.table_dxf_tab,
@@ -79,6 +90,8 @@ class BOMExtractorApp(tk.Tk):
             mapping=header_mapping_reverse,    # Map from display names to keys.
             filter_column_default="P&ID TAG",
             colour_mapping = None,
+            column_widths=column_widths, 
+            default_width=100,
         )
         self.table_dxf_items_filterable.pack(fill="both", expand=True)
         
@@ -91,6 +104,8 @@ class BOMExtractorApp(tk.Tk):
             mapping=None,    # Map from display names to keys.
             filter_column_default="P&ID TAG",
             colour_mapping = None,
+            column_widths=column_widths, 
+            default_width=100,
         )
         self.table_rev_tab_filterable.pack(fill="both", expand=True)
         

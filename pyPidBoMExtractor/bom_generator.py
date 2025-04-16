@@ -89,6 +89,9 @@ def generate_bom(components):
                             connection_type = attributes_near_block_found.get('CONNECTIONTYPE')
                             
                 
+                if description is None: description = ''
+                if connection_type is None: connection_type= ''
+                if typeTag is None: typeTag= ''
                 # "tag_entity": component - the ezdxf.entities.insert.Insert obj of the tag/sticker
                 # "target_entity": entity_found - the ezdxf.entities.insert.Insert obj which tag/sticker is pointing to,
                 #                               if a sticker has 

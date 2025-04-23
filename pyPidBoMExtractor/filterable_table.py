@@ -8,6 +8,7 @@ Created on Sun Apr 13 16:16:53 2025
 import tkinter as tk
 from tkinter import ttk
 from .bom_generator import get_keys_from_pid_tag
+from .utils import parse_tag_code
 
 class FilterableTable(ttk.Frame):
     def __init__(self, master, data, columns, mapping=None, filter_column_default=None, 
@@ -193,14 +194,15 @@ class FilterableTable(ttk.Frame):
                 #print(f"Updating row {data_row_id}, key '{data_key}' with '{new_value}'")
                 if data_row_id in self.data and (current_value!=new_value):
                     self.data[data_row_id][data_key] = new_value  # 🔥 this is the real update
+                    self.data[data_row_id]["flagSynchronized"] = False
                     if data_key=='P&ID TAG':
                         pid_key_tag = new_value
                         tag_comps = get_keys_from_pid_tag(pid_key_tag)
                         if tag_comps[0] != '@':
                             L, N, D = tag_comps
                             data_key_L = self.mapping.get('L', 'L')  # actual dict key
-                            data_key_N = self.mapping.get('N','N')  # actual dict key
-                            data_key_D = self.mapping.get('D','D')  # actual dict key
+                            data_key_N = self.mapping.get('N', 'N')  # actual dict key
+                            data_key_D = self.mapping.get('D', 'D')  # actual dict key
                             self.data[data_row_id][data_key_L] = str(L)
                             self.data[data_row_id][data_key_N] = str(N)
                             self.data[data_row_id][data_key_D] = str(D)

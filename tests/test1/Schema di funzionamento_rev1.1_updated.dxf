@@ -493,7 +493,7 @@ $SKPOLY
   9
 $TDCREATE
  40
-2460789.4141666666
+2460789.6139814816
   9
 $TDUCREATE
  40
@@ -501,7 +501,7 @@ $TDUCREATE
   9
 $TDUPDATE
  40
-2460789.4158912036
+2460789.6147453706
   9
 $TDUUPDATE
  40
@@ -553,7 +553,7 @@ $SPLINESEGS
   9
 $HANDSEED
   5
-2CE2
+2D26
   9
 $SURFTAB1
  70
@@ -937,7 +937,7 @@ $FINGERPRINTGUID
   9
 $VERSIONGUID
   2
-{01291EE4-27D9-4217-B159-92DCF50D0DD1}
+{5E9DDD5A-2C46-4CA8-94B5-6420A5A05265}
   9
 $EXTNAMES
 290
@@ -4797,7 +4797,7 @@ AcDbBlockRepBTag
   0
 APPID
   5
-2CDE
+2D22
 330
 9
 100
@@ -4811,7 +4811,7 @@ HATCHBACKGROUNDCOLOR
   0
 APPID
   5
-2CDF
+2D23
 330
 9
 100
@@ -18015,6 +18015,618 @@ TYPE
  72
 0
   0
+ATTDEF
+  5
+2CDF
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+
+100
+AcDbAttributeDefinition
+  3
+
+  2
+CONNECTIONTYPE
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CE1
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+
+100
+AcDbAttributeDefinition
+  3
+
+  2
+DESCRIPTION
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CE3
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+FLUID
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CE5
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+UNIT
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CE7
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+SKID
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CE9
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+MATERIAL
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CEB
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+SEAL_MAT
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CED
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+POWER_KW
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CEF
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+PN_bar
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CF1
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+ACT_NO_NC
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CF3
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+SIZE
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CF5
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+CAP.(TANK L)
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CF7
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+Q(m3/h)
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CF9
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+SUPPLIER
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CFB
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+BRAND
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CFD
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+MODEL
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2CFF
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+NOTES
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D01
+330
+224A
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+DATASHEET
+ 70
+1
+ 71
+1
+ 72
+0
+  0
 ENDBLK
   5
 2253
@@ -18501,6 +19113,550 @@ TYPE
  70
 1
 280
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D03
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+FLUID
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D05
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+UNIT
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D07
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+SKID
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D09
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+MATERIAL
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D0B
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+SEAL_MAT
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D0D
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+POWER_KW
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D0F
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+PN_bar
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D11
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+ACT_NO_NC
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D13
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+SIZE
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D15
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+CAP.(TANK L)
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D17
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+Q(m3/h)
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D19
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+SUPPLIER
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D1B
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+BRAND
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D1D
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+MODEL
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D1F
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+NOTES
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTDEF
+  5
+2D21
+330
+2582
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttributeDefinition
+  3
+
+  2
+DATASHEET
+ 70
 1
  71
 1
@@ -36889,7 +38045,7 @@ AcDbText
  40
 16.0
   1
-XV100
+XV102
  41
 0.9
  72
@@ -43153,7 +44309,7 @@ AcDbText
  40
 0.5527364971481576
   1
- 
+
 100
 AcDbAttribute
   2
@@ -43195,6 +44351,518 @@ DESCRIPTION
  70
 1
 280
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D02
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+FLUID
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D04
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+UNIT
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D06
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+SKID
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D08
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+MATERIAL
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D0A
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+SEAL_MAT
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D0C
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+POWER_KW
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D0E
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+PN_bar
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D10
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+ACT_NO_NC
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D12
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+SIZE
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D14
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+CAP.(TANK L)
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D16
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+Q(m3/h)
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D18
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+SUPPLIER
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D1A
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+BRAND
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D1C
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+MODEL
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D1E
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+NOTES
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D20
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+DATASHEET
+ 70
 1
  71
 1
@@ -43633,7 +45301,7 @@ AcDbText
  40
 13.49397631979678
   1
-501
+502
  41
 0.9
  72
@@ -43693,6 +45361,582 @@ TYPE
  70
 1
 280
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CDE
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+
+100
+AcDbAttribute
+  2
+CONNECTIONTYPE
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CE0
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+
+100
+AcDbAttribute
+  2
+DESCRIPTION
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CE2
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+FLUID
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CE4
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+UNIT
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CE6
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+SKID
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CE8
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+MATERIAL
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CEA
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+SEAL_MAT
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CEC
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+POWER_KW
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CEE
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+PN_bar
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CF0
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+ACT_NO_NC
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CF2
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+SIZE
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CF4
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+CAP.(TANK L)
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CF6
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+Q(m3/h)
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CF8
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+SUPPLIER
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CFA
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+BRAND
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CFC
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+MODEL
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2CFE
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+NOTES
+ 70
+1
+ 71
+1
+ 72
+0
+  0
+ATTRIB
+  5
+2D00
+330
+1F
+100
+AcDbEntity
+  8
+0
+100
+AcDbText
+ 10
+0.0
+ 20
+0.0
+ 30
+0.0
+ 40
+2.5
+  1
+None
+100
+AcDbAttribute
+  2
+DATASHEET
+ 70
 1
  71
 1
@@ -43943,7 +46187,7 @@ spds.net.weldleg
   3
 EZDXF_META
 350
-2CE0
+2D24
   0
 DICTIONARY
   5
@@ -57345,7 +59589,7 @@ ACVALUE_END
   0
 DICTIONARY
   5
-2CE0
+2D24
 330
 C
 100
@@ -57355,19 +59599,19 @@ AcDbDictionary
   3
 WRITTEN_BY_EZDXF
 350
-2CE1
+2D25
   0
 DICTIONARYVAR
   5
-2CE1
+2D25
 330
-2CE0
+2D24
 100
 DictionaryVariables
 280
 0
   1
-1.3.3 @ 2025-04-23T07:58:53.751932+00:00
+1.3.3 @ 2025-04-23T12:45:14.301985+00:00
   0
 ENDSEC
   0

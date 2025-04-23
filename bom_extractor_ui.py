@@ -5,7 +5,7 @@ import logging
 from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 from pyPidBoMExtractor.bom_generator import header_mapping, header_mapping_reverse ,make_color_mapping,find_duplicates,update_XLS_add_missing_items_highlight
-from pyPidBoMExtractor.importerdxf import import_BOMjson_into_DXF
+from pyPidBoMExtractor.importerdxf import import_BOMjson_into_DXF,update_dxfJSON_into_dxf_drawing
 from pyPidBoMExtractor.filterable_table import FilterableTable
 import os
 import json
@@ -772,6 +772,7 @@ class BOMExtractorApp(tk.Tk):
         
         try:
             # Save the updated DXF file using the chosen path.
+            update_dxfJSON_into_dxf_drawing(self.bom_dxf)
             self.docDxf.saveas(output_path)
             messagebox.showinfo("Success", f"DXF saved successfully:\n{output_path}")
         except Exception as e:

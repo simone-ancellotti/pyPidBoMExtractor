@@ -109,6 +109,7 @@ def generate_bom(components):
                         #"target_block_def" : block_def_found,
                         "target_entity": entity_found,
                         "tag_entity": component,
+                        "flagSynchronized":True,
                         }
                 if entity_found:
                     entity_to_be_extracted = entity_found

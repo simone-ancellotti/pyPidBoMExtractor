@@ -7,6 +7,7 @@ Created on Sun Apr 13 16:16:53 2025
 
 import tkinter as tk
 from tkinter import ttk
+from .bom_generator import get_keys_from_pid_tag
 
 class FilterableTable(ttk.Frame):
     def __init__(self, master, data, columns, mapping=None, filter_column_default=None, 
@@ -38,6 +39,13 @@ class FilterableTable(ttk.Frame):
         
         # Set default filter column.
         self.filter_column = filter_column_default if filter_column_default else columns[0]
+        
+        # Configure custom selection color for Treeview
+        style = ttk.Style(self)
+        style.map("Treeview",
+                  background=[("selected", "#e0f7fa")],   # Light cyan
+                  foreground=[("selected", "black")])
+        
         
         # Create filter controls.
         self._create_filter_controls()
@@ -78,6 +86,9 @@ class FilterableTable(ttk.Frame):
             width = self.column_widths.get(col, self.default_width)
             self.tree.column(col, width=width, anchor="center")
         
+        self.tree.bind("<Control-c>", self._copy_selection_to_clipboard)
+        self.tree.bind("<Double-1>", self._on_double_click)
+        
         # Vertical scrollbar.
         vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
         vsb.grid(row=0, column=1, sticky="ns")
@@ -116,7 +127,7 @@ class FilterableTable(ttk.Frame):
             
         
         # Insert filtered rows
-        for row in self.filtered_data.values():
+        for row_id, row in self.filtered_data.items():
             # Create a tuple of values in the order of self.mapping (using display columns)
             values = tuple(row.get(self.mapping[col], "") for col in self.columns)
             tags = ()
@@ -131,12 +142,84 @@ class FilterableTable(ttk.Frame):
                 if color:
                     tags = (color,)
                     
-            self.tree.insert("", "end", values=values, tags=tags)
+            self.tree.insert("", "end",iid=str(row_id), values=values, tags=tags)
         #self.tree.tag_configure("highlight", background="lightblue")
         if self.colour_mapping:
             for c in self.colour_mapping.values():
                 self.tree.tag_configure(c, background=c)
+                
+    def _copy_selection_to_clipboard(self, event=None):
+        selection = self.tree.selection()
+        if not selection:
+            return
     
+        rows = []
+        for item_id in selection:
+            row_values = self.tree.item(item_id)["values"]
+            row_str = "\t".join(str(v) for v in row_values)
+            rows.append(row_str)
+    
+        result = "\n".join(rows)
+        self.clipboard_clear()
+        self.clipboard_append(result)
+        self.update()  # Ensures clipboard is updated
+
+    
+    def _on_double_click(self, event):
+        region = self.tree.identify("region", event.x, event.y)
+        if region != "cell":
+            return
+    
+        row_iid = self.tree.identify_row(event.y)
+        col_id = self.tree.identify_column(event.x)
+        col_index = int(col_id.replace("#", "")) - 1
+    
+        x, y, width, height = self.tree.bbox(row_iid, col_id)
+        current_value = self.tree.set(row_iid, column=col_id)
+    
+        entry = tk.Entry(self.tree)
+        entry.place(x=x, y=y, width=width, height=height)
+        entry.insert(0, current_value)
+        entry.focus()
+    
+        def on_confirm(event=None):
+            new_value = entry.get()
+            self.tree.set(row_iid, column=col_id, value=new_value)
+    
+            try:
+                data_row_id = int(row_iid)  # the key in self.data
+                column_name = self.columns[col_index]  # display column
+                data_key = self.mapping.get(column_name, column_name)  # actual dict key
+                #print(f"Updating row {data_row_id}, key '{data_key}' with '{new_value}'")
+                if data_row_id in self.data and (current_value!=new_value):
+                    self.data[data_row_id][data_key] = new_value  # 🔥 this is the real update
+                    if data_key=='P&ID TAG':
+                        pid_key_tag = new_value
+                        tag_comps = get_keys_from_pid_tag(pid_key_tag)
+                        if tag_comps[0] != '@':
+                            L, N, D = tag_comps
+                            data_key_L = self.mapping.get('L', 'L')  # actual dict key
+                            data_key_N = self.mapping.get('N','N')  # actual dict key
+                            data_key_D = self.mapping.get('D','D')  # actual dict key
+                            self.data[data_row_id][data_key_L] = str(L)
+                            self.data[data_row_id][data_key_N] = str(N)
+                            self.data[data_row_id][data_key_D] = str(D)
+                            self._populate_table()
+                    
+                    print(f"Updating row {data_row_id}, key '{data_key}' with '{new_value}'")
+
+            except Exception as e:
+                print(f"Update failed: {e}")
+    
+            entry.destroy()
+    
+        entry.bind("<Return>", on_confirm)
+        entry.bind("<FocusOut>", lambda e: entry.destroy())
+        column_name = self.columns[col_index]  # display column
+        data_key = self.mapping.get(column_name, column_name)  # actual dict key
+        print(f"check value updated {self.data[int(row_iid)][data_key]}")
+
+
     def set_data(self, new_data,new_colour_mapping=None):
         """
         Updates the table with new data.

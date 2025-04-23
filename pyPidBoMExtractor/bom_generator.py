@@ -829,7 +829,20 @@ def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
 #                 sheet.cell(row=i, column=j).value = value
 
 
-    
+def get_keys_from_pid_tag(tag):
+    tag=str(tag)
+    pattern = re.compile(r"^([A-Za-z]+)(\d+)([A-Za-z]*)$")
+    match = pattern.match(tag or "")
+    if match:
+        prefix, num_str, suffix = match.groups()
+        return (prefix, int(num_str), suffix)
+    else:
+        # Return a triple that always sorts after valid tags.
+        # "{" comes after "z" in ASCII, and float('inf') ensures numeric value is highest.
+        #return (float('inf'), tag.lower())
+        #return (0, tag.lower(), 0)
+        return ('@',-float('inf'), tag.lower())
+
 def sort_key_for_pid_tag(tag):
     """
     Generate a sorting key from a P&ID TAG string.

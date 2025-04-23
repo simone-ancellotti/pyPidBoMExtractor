@@ -609,7 +609,8 @@ class BOMExtractorApp(tk.Tk):
                 return
     
             # Load the revised Excel file as JSON
-            self.bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
+            if self.bom_revisedJSON=={}:
+                self.bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
     
             # Convert BOM from DXF to JSON
             self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
@@ -778,8 +779,8 @@ class BOMExtractorApp(tk.Tk):
 
     def import_BOM_into_DXF(self):
         # Load the revised Excel file as JSON
-        bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
-        rows_xls_no = import_BOMjson_into_DXF(bom_revisedJSON,self.bom_dxf)
+        #bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
+        rows_xls_no = import_BOMjson_into_DXF(self.bom_revisedJSON,self.bom_dxf)
         
         #self.save_dxf_windows()
         return None   

@@ -573,6 +573,8 @@ def compare_bomsJSON(
                 
     return missing_in_revised, missing_in_dxf
 
+
+
 def update_XLS_add_missing_items_highlight(
         workbook_xls,
         bom_dxf,
@@ -615,6 +617,8 @@ def update_XLS_add_missing_items_highlight(
     if missing_in_revised and import_missingDXF2BOM and sheet:
         add_missing_items_to_excel(missing_in_revised, sheet, bom_dxf_filtered)
     
+    
+    update_XLS_modified_cells(sheet, bom_revisedJSON)
     
     # sorting
     sort_rows_by_pid_tag(sheet)
@@ -661,6 +665,30 @@ def highlight_missing_item_in_excel(item, sheet,color = "FF0000"):
                 sheet.cell(row=row, column=col).fill = PatternFill(start_color=color, end_color=color, fill_type="solid")
             break  # Exit after highlighting the row
 
+def update_XLS_modified_cells(sheet, bom_revisedJSON):
+    """
+    Updates only rows in the Excel sheet whose 'flagSynchronized' is False
+    based on the content in bom_revisedJSON.
+    
+    Args:
+        sheet (openpyxl worksheet): The active sheet.
+        bom_revisedJSON (dict): Dictionary with Excel BOM rows.
+    """
+    # Create header mapping: header_name -> column index (1-based)
+    header_mapping = {
+        sheet.cell(row=1, column=col).value: col
+        for col in range(1, sheet.max_column + 1)
+    }
+
+    for rowJSON_id, xls_item in bom_revisedJSON.items():
+        if not xls_item.get("flagSynchronized", True):  # default True if missing
+            row_index = rowJSON_id + 1  # Excel rows start at 1, and row 1 is the header
+            for header, col_index in header_mapping.items():
+                if header in xls_item:
+                    sheet.cell(row=row_index, column=col_index).value = xls_item[header]
+    
+    return sheet
+
 
 def highlight_duplicate_tags_in_excel(sheet, column_name, color="800080"):
     """
@@ -700,7 +728,9 @@ def highlight_duplicate_tags_in_excel(sheet, column_name, color="800080"):
             for cell in cells:
                 cell.fill = openpyxl.styles.PatternFill(start_color=color, end_color=color, fill_type="solid")
                 print(f"Highlighted duplicate tag '{tag}' in cell {cell.coordinate}.")
-     
+
+
+
 def add_missing_items_to_excel(missing_items, sheet, bom_dxf):
     """
     Add missing items from the DXF BOM to the Excel sheet and highlight them (e.g. in grey).
@@ -916,3 +946,4 @@ def sort_rows_by_pid_tag(sheet):
                 sheet.cell(row=i, column=j).value = i - 1  # Renumber '#' column starting from 1.
             else:
                 sheet.cell(row=i, column=j).value = value
+                

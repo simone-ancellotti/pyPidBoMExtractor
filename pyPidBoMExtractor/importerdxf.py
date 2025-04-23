@@ -105,12 +105,8 @@ def update_dxfJSON_into_dxf_drawing(bom_dxf):
                                 if att.dxf.tag.upper() == key_TargetObjectLoopNumber.upper():
                                     if str(att.dxf.text).upper() != N.upper():
                                         att.dxf.text = N
+                    dxf_item["flagSynchronized"]= True
                                     
-
-                        
-                                
-                        
-            print(dxf_item)
-        
+            #print(dxf_item)
     return None
     

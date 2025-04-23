@@ -195,18 +195,25 @@ class FilterableTable(ttk.Frame):
                 if data_row_id in self.data and (current_value!=new_value):
                     self.data[data_row_id][data_key] = new_value  # 🔥 this is the real update
                     self.data[data_row_id]["flagSynchronized"] = False
+                    data_key_L = self.mapping.get('L', 'L')  # actual dict key
+                    data_key_N = self.mapping.get('N', 'N')  # actual dict key
+                    data_key_D = self.mapping.get('D', 'D')  # actual dict key
                     if data_key=='P&ID TAG':
                         pid_key_tag = new_value
                         tag_comps = get_keys_from_pid_tag(pid_key_tag)
                         if tag_comps[0] != '@':
                             L, N, D = tag_comps
-                            data_key_L = self.mapping.get('L', 'L')  # actual dict key
-                            data_key_N = self.mapping.get('N', 'N')  # actual dict key
-                            data_key_D = self.mapping.get('D', 'D')  # actual dict key
                             self.data[data_row_id][data_key_L] = str(L)
                             self.data[data_row_id][data_key_N] = str(N)
                             self.data[data_row_id][data_key_D] = str(D)
                             self._populate_table()
+                    if data_key==data_key_L or data_key==data_key_N or data_key==data_key_D:
+                        new_L = str(self.data[data_row_id][data_key_L]).strip()
+                        new_N = str(self.data[data_row_id][data_key_N]).strip()
+                        new_D = str(self.data[data_row_id][data_key_D]).strip()
+                        pid_tag2_updated = new_L+new_N+new_D
+                        self.data[data_row_id]['P&ID TAG'] = pid_tag2_updated
+                        self._populate_table()
                     
                     print(f"Updating row {data_row_id}, key '{data_key}' with '{new_value}'")
 

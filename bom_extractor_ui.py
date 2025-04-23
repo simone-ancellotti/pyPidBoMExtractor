@@ -60,8 +60,8 @@ class BOMExtractorApp(tk.Tk):
         self.table_rev_tab = ttk.Frame(self.notebook)
         self.table_missing_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.main_tab, text="Main")
-        self.notebook.add(self.table_dxf_tab, text="BOM Table dxf")
-        self.notebook.add(self.table_rev_tab, text="BOM Table revised")
+        self.notebook.add(self.table_dxf_tab, text="BOM Table DXF")
+        self.notebook.add(self.table_rev_tab, text="BOM Table XLS revised")
         #self.notebook.add(self.table_missing_tab, text="import DXF")
         
         
@@ -153,7 +153,7 @@ class BOMExtractorApp(tk.Tk):
         
     def show_about(self):
         # Show an About dialog with version information
-        about_text = "pyPidBoMExtractor Version 2.1\nDeveloped by Simone Ancellotti\n© 2025"
+        about_text = "pyPidBoMExtractor Version 2.2\nDeveloped by Simone Ancellotti\n© 2025"
         messagebox.showinfo("About", about_text)
 
     def save_settings(self):
@@ -287,7 +287,7 @@ class BOMExtractorApp(tk.Tk):
         self.compare_button.grid(row=8, column=0, columnspan=1, padx=10, pady=20)
         
         
-        self.import_dxf_button = tk.Button(self.main_tab, text="Import BOM into DXF", state=tk.DISABLED, command=self.import_BOM_into_DXF)
+        self.import_dxf_button = tk.Button(self.main_tab, text="Import XLS into DXF", state=tk.DISABLED, command=self.import_BOM_into_DXF)
         self.import_dxf_button.grid(row=8, column=1, columnspan=1, padx=20, pady=20)
         
             

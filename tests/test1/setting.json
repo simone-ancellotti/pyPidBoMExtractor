@@ -1,5 +1,5 @@
 {
-    "dwg_file": "C:/ASETS-code/python/pyp-id_finder/tests/test1/Schema di funzionamento_rev1.1.dxf",
+    "dwg_file": "C:/ASETS-code/python/pyp-id_finder/tests/test1/Schema di funzionamento_rev1.1_modified.dxf",
     "template_BOM_xls_path": null,
     "revised_excel_file": "C:/ASETS-code/python/pyp-id_finder/tests/test1/Schema di funzionamento_rev1.1_bom_revised.xlsx",
     "highlight_missing": true,

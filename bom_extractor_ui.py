@@ -24,7 +24,7 @@ class BOMExtractorApp(tk.Tk):
         self.title("BOM Extractor Application")
         self.geometry("610x440")  # Adjusted window size for better layout
         
-        icon_image = PhotoImage(file="bom_valve_icon.png")
+        icon_image = tk.PhotoImage(file="bom_valve_icon.png")
         self.iconphoto(True, icon_image)
         
         # Variables to hold file paths and options
@@ -44,6 +44,9 @@ class BOMExtractorApp(tk.Tk):
         self.missing_in_dxf = None
         self.workbook_excel = None
         self.flagExcelAldreadyCompared = False
+        self.dragged_pid_tag = None
+        self.drag_label = None
+
         self.highlight_missing = tk.BooleanVar(value=True)  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar(value=True)  # Variable for import missing checkbox
         self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
@@ -58,19 +61,13 @@ class BOMExtractorApp(tk.Tk):
         self.main_tab = ttk.Frame(self.notebook)
         self.table_dxf_tab = ttk.Frame(self.notebook)
         self.table_rev_tab = ttk.Frame(self.notebook)
-        self.table_missing_tab = ttk.Frame(self.notebook)
+        self.table_combined_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.main_tab, text="Main")
         self.notebook.add(self.table_dxf_tab, text="BOM Table DXF")
         self.notebook.add(self.table_rev_tab, text="BOM Table XLS revised")
-        #self.notebook.add(self.table_missing_tab, text="import DXF")
+        self.notebook.add(self.table_combined_tab, text="Combined View")
         
-        
-        # UI Setup
-        self.setup_ui()
-        self.create_menu() 
-        #self.setup_table_tab()
-        
-        column_widths = {
+        self.column_widths = {
             "#": 40,
             "L": 40,
             "D": 40,
@@ -82,6 +79,20 @@ class BOMExtractorApp(tk.Tk):
             "Brand": 100,
             "Country of Origin": 130
         }
+        
+        # UI Setup
+        self.setup_ui()
+        self.create_menu() 
+        self.setup_table_tabs()
+        
+
+
+        
+
+        
+        self.bind_all("<ButtonRelease-1>", self.on_global_button_release)
+
+    def setup_table_tabs(self):
         display_columns = list(header_mapping.values())
         self.table_dxf_items_filterable = FilterableTable(
             master=self.table_dxf_tab,
@@ -90,7 +101,7 @@ class BOMExtractorApp(tk.Tk):
             mapping=header_mapping_reverse,    # Map from display names to keys.
             filter_column_default="P&ID TAG",
             colour_mapping = None,
-            column_widths=column_widths, 
+            column_widths=self.column_widths, 
             default_width=100,
         )
         self.table_dxf_items_filterable.pack(fill="both", expand=True)
@@ -104,15 +115,101 @@ class BOMExtractorApp(tk.Tk):
             mapping=None,    # Map from display names to keys.
             filter_column_default="P&ID TAG",
             colour_mapping = None,
-            column_widths=column_widths, 
+            column_widths=self.column_widths, 
             default_width=100,
         )
         self.table_rev_tab_filterable.pack(fill="both", expand=True)
         
+        # Combined view using paned window for better layout control
+        paned = ttk.PanedWindow(self.table_combined_tab, orient=tk.HORIZONTAL)
+        paned.pack(fill="both", expand=True)
+
+        frame_left = ttk.Frame(paned)
+        frame_right = ttk.Frame(paned)
+        paned.add(frame_left, weight=1)
+        paned.add(frame_right, weight=1)
+
+        self.table_dxf_items_combined = FilterableTable(
+            master=frame_left,
+            data={},
+            columns=display_columns,
+            mapping=header_mapping_reverse,
+            filter_column_default="P&ID TAG",
+            colour_mapping = None,
+            column_widths=self.column_widths, 
+            default_width=100,
+        )
+        self.table_dxf_items_combined.pack(fill="both", expand=True)
+
+        self.table_rev_items_combined = FilterableTable(
+            master=frame_right,
+            data={},
+            columns=display_columns,
+            mapping=None,    # Map from display names to keys.
+            filter_column_default="P&ID TAG",
+            colour_mapping = None,
+            column_widths=self.column_widths, 
+            default_width=100,
+        )
+        self.table_rev_items_combined.pack(fill="both", expand=True)
+        
+        self.table_dxf_items_combined.tree.bind("<ButtonPress-1>", self.on_drag_start)
+        #self.table_rev_items_combined.tree.bind("<ButtonRelease-1>", self.on_drop)
+        self.table_dxf_items_combined.tree.bind("<B1-Motion>", self.on_drag_motion)
+        
+    def on_drag_start(self, event):
+        if not (event.state & 0x0004):  # 0x0004 = Ctrl key mask
+            print("Drag not started: Ctrl not pressed.")
+            return
+    
+        item_id = self.table_dxf_items_combined.tree.identify_row(event.y)
+        if item_id:
+            values = self.table_dxf_items_combined.tree.item(item_id, "values")
+            pid_index = self.table_dxf_items_combined.columns.index("P&ID TAG")
+            self.dragged_pid_tag = values[pid_index]
+            print(f"Drag started with P&ID TAG: {self.dragged_pid_tag}")
+    
+            # Create a floating label
+            if self.drag_label:
+                self.drag_label.destroy()
+    
+            self.drag_label = tk.Label(self, text=self.dragged_pid_tag, bg="yellow", relief="solid", borderwidth=1)
+            self.drag_label.place(x=event.x_root - self.winfo_rootx(), y=event.y_root - self.winfo_rooty())
+    
+        
+
+    def on_drag_motion(self, event):
+        widget = event.widget.winfo_containing(event.x_root, event.y_root)
+        
+        # Check if the mouse is over the right table
+        if widget == self.table_rev_items_combined.tree:
+            item_id = self.table_rev_items_combined.tree.identify_row(event.y)
+    
+            if item_id and self.dragged_pid_tag:
+                print("Simulated drop over:", item_id)
+    
+                current_values = list(self.table_rev_items_combined.tree.item(item_id, "values"))
+                pid_index = self.table_rev_items_combined.columns.index("P&ID TAG")
+                current_values[pid_index] = self.dragged_pid_tag
+                self.table_rev_items_combined.tree.item(item_id, values=current_values)
+    
+                tree_index = self.table_rev_items_combined.tree.index(item_id)
+                data_key = list(self.table_rev_items_combined.filtered_data.keys())[tree_index]
+                if self.bom_revisedJSON and data_key in self.bom_revisedJSON:
+                    self.bom_revisedJSON[data_key]["P&ID TAG"] = self.dragged_pid_tag
+                    self.bom_revisedJSON[data_key]["flagSynchronized"] = False
+                    print(f"Updated row {data_key} with {self.dragged_pid_tag}")
+                    #print(self.bom_revisedJSON[data_key])
+                    self.updateTableRevBOM()
+    
+                # Reset after drop
+                self.dragged_pid_tag = None
+                
+                if self.drag_label:
+                    self.drag_label.destroy()
+                    self.drag_label = None
 
         
-        self.bind_all("<ButtonRelease-1>", self.on_global_button_release)
-
     def on_global_button_release(self, event):
         """Global callback executed on every left mouse button release."""
         self.check_general_buttons()
@@ -290,149 +387,8 @@ class BOMExtractorApp(tk.Tk):
         self.import_dxf_button = tk.Button(self.main_tab, text="Import XLS into DXF", state=tk.DISABLED, command=self.import_BOM_into_DXF)
         self.import_dxf_button.grid(row=8, column=1, columnspan=1, padx=20, pady=20)
         
-            
-    # def upload_dxf(self):
-    #     self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
-    #     if self.dwg_file:
-    #         self.dxf_label.config(text=os.path.basename(self.dwg_file))
-    #         logging.info(f"Uploaded DXF file: {self.dwg_file}")
-    #         self.extract_button.config(state=tk.NORMAL)
+ 
     
-    # def setup_table_tab(self):
-    #     # Create a frame to hold the table and its scrollbars
-    #     table_frame = ttk.Frame(self.table_dxf_tab)
-    #     table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
-    #     # Use one row from sample_bom_data to determine columns.
-         
-    #     #sample_row = header_mapping[next(iter(header_mapping))]
-    #     columns = list(header_mapping.values())
-
-    #     # Create a Treeview to display the BOM data.
-    #     self.tree1 = ttk.Treeview(table_frame, columns=columns, show="headings")
-    #     self.tree1.grid(row=0, column=0, sticky="nsew")
-
-    #     # Set up column headings.
-    #     for col in columns:
-    #         self.tree1.heading(col, text=col)
-    #         self.tree1.column(col, width=100, anchor="center")
-        
-
-    #     # Add vertical and horizontal scrollbars.
-    #     vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree1.yview)
-    #     vsb.grid(row=0, column=1, sticky="ns")
-    #     self.tree1.configure(yscrollcommand=vsb.set)
-
-    #     hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree1.xview)
-    #     hsb.grid(row=1, column=0, sticky="ew")
-    #     self.tree1.configure(xscrollcommand=hsb.set)
-
-    #     table_frame.rowconfigure(0, weight=1)
-    #     table_frame.columnconfigure(0, weight=1)
-    # def setup_table_tab(self):
-    #     # --- Filtering Controls ---
-    #     # Create a frame at the top of the DXF tab for filter controls.
-    #     filter_frame = ttk.Frame(self.table_dxf_tab)
-    #     filter_frame.pack(fill="x", padx=10, pady=5)
-        
-    #     ttk.Label(filter_frame, text="Filter Column:").pack(side="left", padx=5)
-        
-    #     # The options will be the friendly names (the values in header_mapping)
-    #     options = list(header_mapping.values())
-    #     self.dxf_filter_col_var = tk.StringVar(value=options[0])
-    #     self.column_combobox = ttk.Combobox(filter_frame, textvariable=self.dxf_filter_col_var,
-    #                                         values=options, state="readonly", width=15)
-    #     self.column_combobox.pack(side="left", padx=5)
-    #     self.column_combobox.bind("<<ComboboxSelected>>", self.update_dxf_filter)
-        
-    #     ttk.Label(filter_frame, text="Filter:").pack(side="left", padx=5)
-    #     self.dxf_filter_text_var = tk.StringVar()
-    #     filter_entry = ttk.Entry(filter_frame, textvariable=self.dxf_filter_text_var)
-    #     filter_entry.pack(side="left", fill="x", expand=True, padx=5)
-    #     filter_entry.bind("<KeyRelease>", self.update_dxf_filter)
-        
-    #     # --- Table Setup ---
-    #     # Create a frame to hold the Treeview and its scrollbars.
-    #     table_frame = ttk.Frame(self.table_dxf_tab)
-    #     table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-    #     # Use the header mapping for the display order. Here, we'll show the friendly names.
-    #     self.dxf_display_columns = list(header_mapping.values())
-    #     # And store the "real" column keys (order) for data retrieval.
-    #     self.dxf_data_order = list(header_mapping.keys())
-        
-    #     self.tree1 = ttk.Treeview(table_frame, columns=self.dxf_display_columns, show="headings")
-    #     self.tree1.grid(row=0, column=0, sticky="nsew")
-        
-    #     for col in self.dxf_display_columns:
-    #         self.tree1.heading(col, text=col)
-    #         self.tree1.column(col, width=80, anchor="center")
-            
-    #     # Add vertical scrollbar.
-    #     vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree1.yview)
-    #     vsb.grid(row=0, column=1, sticky="ns")
-    #     self.tree1.configure(yscrollcommand=vsb.set)
-        
-    #     # Add horizontal scrollbar.
-    #     hsb = ttk.Scrollbar(table_frame, orient="horizontal", command=self.tree1.xview)
-    #     hsb.grid(row=1, column=0, sticky="ew")
-    #     self.tree1.configure(xscrollcommand=hsb.set)
-        
-    #     table_frame.rowconfigure(0, weight=1)
-    #     table_frame.columnconfigure(0, weight=1)
-    
-    # def update_dxf_filter(self, event=None):
-    #     """
-    #     Called when the filter text or selected column changes.
-    #     Filters self.bom_dxf and repopulates self.tree1.
-    #     """
-    #     # If no BOM data is loaded, simply return.
-    #     if not self.bom_dxf:
-    #         return
-        
-    #     # Invert header_mapping to map from friendly (display) name back to the actual key.
-    #     inv_map = {v: k for k, v in header_mapping.items()}
-    #     selected_display = self.dxf_filter_col_var.get()
-    #     # Determine the actual dictionary key for filtering.
-    #     filter_key = inv_map.get(selected_display, self.dxf_data_order[0])
-        
-    #     filter_text = self.dxf_filter_text_var.get().lower()
-    #     filtered = {}
-    #     for row_id, row in self.bom_dxf.items():
-    #         cell_value = str(row.get(filter_key, "")).lower()
-    #         if filter_text in cell_value:
-    #             filtered[row_id] = row
-    #     # Store the filtered data (you might want to keep the original in self.bom_dxf).
-    #     self.filtered_bom_dxf = filtered
-    #     self.updateTableDXFFiltered()
-    
-    # def updateTableDXFFiltered(self):
-    #     """
-    #     Clears and repopulates self.tree1 using self.filtered_bom_dxf.
-    #     """
-    #     # Clear current items from the Treeview.
-    #     for item in self.tree1.get_children():
-    #         self.tree1.delete(item)
-        
-    #     # Use the filtered data if available.
-    #     data = self.filtered_bom_dxf if hasattr(self, 'filtered_bom_dxf') else self.bom_dxf
-    #     if not data:
-    #         return
-        
-    #     # Insert each row into the tree.
-    #     for row in data.values():
-    #         # Create a tuple of values in the order defined by self.dxf_data_order.
-    #         values = tuple(row.get(key, "") for key in self.dxf_data_order)
-    #         # Example: (optional) add a tag if you want to color certain rows.
-    #         tags = ()
-    #         # For instance, if you want to highlight rows whose "P&ID TAG" starts with "pH6":
-    #         if str(row.get("P&ID TAG", "")).startswith("pH6"):
-    #             tags = ("highlight",)
-    #         self.tree1.insert("", "end", values=values, tags=tags)
-        
-    #     # Configure tag for row coloring.
-    #     self.tree1.tag_configure("highlight", background="lightblue")
-
     def update_color_mapping_2nd_table(self):
         self.colour_mapping2={}
         if self.highlight_missing.get():
@@ -472,9 +428,9 @@ class BOMExtractorApp(tk.Tk):
         if colour_mapping22:
             self.colour_mapping2.update(colour_mapping22)
             
-        self.table_dxf_items_filterable.set_data(self.bom_dxf,self.colour_mapping1)
+        self.updateTableDXF()
         self.table_rev_tab_filterable.set_data(self.bom_revisedJSON,self.colour_mapping2)
-        
+        self.table_rev_items_combined.set_data(self.bom_revisedJSON,self.colour_mapping2)
         
         
     def updateTableDXF(self):
@@ -485,7 +441,8 @@ class BOMExtractorApp(tk.Tk):
         #          values = tuple(row.get(col, "") for col in columns)
         #          self.tree1.insert("", "end", values=values)    
         if self.bom_dxf:
-             self.table_dxf_items_filterable.set_data(self.bom_dxf)
+             self.table_dxf_items_filterable.set_data(self.bom_dxf,self.colour_mapping1)
+             self.table_dxf_items_combined.set_data(self.bom_dxf,self.colour_mapping1)
                  
     def upload_dxf(self):
         self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])

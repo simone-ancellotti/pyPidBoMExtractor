@@ -253,9 +253,15 @@ class BOMExtractorApp(tk.Tk):
                 target_json[data_key]["flagSynchronized"] = False
                 print(f"Updated row {data_key} with {self.dragged_pid_tag}")
                 L, N, D = parse_tag_code(self.dragged_pid_tag)
-                target_json[data_key]['L'] = str(L)
-                target_json[data_key]['N'] = str(N)
-                target_json[data_key]['D'] = str(D)
+                mapping = {}
+                if target_table == self.table_dxf_items_combined:
+                    mapping = header_mapping_reverse
+                data_key_L = mapping.get('L', 'L')  # actual dict key
+                data_key_N = mapping.get('N', 'N')  # actual dict key
+                data_key_D = mapping.get('D', 'D')  # actual dict key
+                target_json[data_key][data_key_L] = str(L)
+                target_json[data_key][data_key_N] = str(N)
+                target_json[data_key][data_key_D] = str(D)
                 #print(self.bom_revisedJSON[data_key])
                 self.updateTableRevBOM()
 

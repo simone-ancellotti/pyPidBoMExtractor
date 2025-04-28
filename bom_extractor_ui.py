@@ -11,13 +11,14 @@ from pyPidBoMExtractor.utils import parse_tag_code
 import os
 import json
 import openpyxl
+from pyPidBoMExtractor._version import __version__
+
 
 # pyinstaller --onefile --noconsole --strip --exclude-module=numpy bom_extractor_ui.py
 
 
 # Configure logging to display in terminal
 logging.basicConfig(level=logging.INFO)
-
 # Main application class
 class BOMExtractorApp(tk.Tk):
     def __init__(self):
@@ -289,7 +290,7 @@ class BOMExtractorApp(tk.Tk):
             self.drag_label = None
     
         widget = event.widget.winfo_containing(event.x_root, event.y_root)
-        print('widget:', widget)
+        
     
         # Check if hovering over revised or dxf table
         if widget == self.table_rev_items_combined.tree:
@@ -385,7 +386,7 @@ class BOMExtractorApp(tk.Tk):
         
     def show_about(self):
         # Show an About dialog with version information
-        about_text = "pyPidBoMExtractor Version 2.3\nDeveloped by Simone Ancellotti\n© 2025"
+        about_text = f"pyPidBoMExtractor Version {__version__}\nDeveloped by Simone Ancellotti\n© 2025"
         messagebox.showinfo("About", about_text)
 
     def save_settings(self):
@@ -889,12 +890,26 @@ class BOMExtractorApp(tk.Tk):
             messagebox.showerror("Error", f"Failed to save DXF file: {e}")
 
     def import_BOM_into_DXF(self):
-        # Load the revised Excel file as JSON
-        #bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
-        rows_xls_no = import_BOMjson_into_DXF(self.bom_revisedJSON,self.bom_dxf)
+        # Ask confirmation from user
+        proceed = messagebox.askyesno(
+            "Confirmation",
+            "You are about to overwrite the DXF content with the values from the XLS table wherever the P&ID TAG matches.\nDo you want to proceed?"
+        )
         
-        #self.save_dxf_windows()
-        return None   
+        if not proceed:
+            return  # If user clicks "No", cancel the operation
+    
+        # Load the revised Excel file as JSON
+        # bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
+        rows_xls_no = import_BOMjson_into_DXF(
+            self.bom_revisedJSON, 
+            self.bom_dxf,
+            flagUpdateJSON_dxf=True
+        )
+        self.updateTableRevBOM()
+        # self.save_dxf_windows()
+        return None
+
     
 if __name__ == "__main__":
     app = BOMExtractorApp()

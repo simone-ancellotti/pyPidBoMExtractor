@@ -42,7 +42,7 @@ def get_row_by_field(bom_dict, field_name, field_value, case_sensitive=True):
 
     return None
 
-def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf):
+def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf,flagUpdateJSON_dxf=False):
     rows_xls_no = []
     for item_xls in bom_revisedJSON.values():
         PID_TAG_xls = item_xls.get('P&ID TAG')
@@ -60,6 +60,8 @@ def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf):
                             text_xls = str(item_xls.get(key_xls))
                             text_xls = text_xls.strip()
                             update_tag_value_in_block(text_xls, key_dxf, entity_dxf_to_modify)
+                            if flagUpdateJSON_dxf:
+                                dxf_item_found[key_dxf] =  text_xls
                 else: 
                     rows_xls_no.append()
     return rows_xls_no

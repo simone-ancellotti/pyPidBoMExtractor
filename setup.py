@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
+from pyPidBoMExtractor._version import __version__
 
 setup(
     name='pyPidBoMExtractor',
-    version='2.1',
+    version=__version__,
     packages=find_packages(),
     install_requires=[
         'ezdxf',

@@ -322,7 +322,7 @@ class FilterableTable(ttk.Frame):
                     print(f"Updating row {data_row_id}, key '{data_key}' with '{new_value}'")
                     if self.callback_on_modify:
                         self.callback_on_modify()
-                        print("callback_on_modify triggered after manual edit")
+                        #print("callback_on_modify triggered after manual edit")
 
             except Exception as e:
                 print(f"Update failed: {e}")

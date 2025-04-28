@@ -92,6 +92,7 @@ class BOMExtractorApp(tk.Tk):
         
         
         self.bind_all("<ButtonRelease-1>", self.on_global_button_release)
+        self.bind_all("<Control-q>", self.on_ctrl_q)
 
     def setup_table_tabs(self):
         display_columns = list(header_mapping.values())
@@ -779,6 +780,11 @@ class BOMExtractorApp(tk.Tk):
         except Exception as e:
             logging.error(f"An error occurred during BOM comparison: {e}")
             messagebox.showerror("Error", f"Failed to compare BOM: {e}")
+    
+    def on_ctrl_q(self, event=None):
+        """Triggered when user presses CTRL+Q."""
+        print("CTRL+Q pressed — running compare_bom()")
+        self.compare_bom()
 
     def exportNewExcellFile(self):
         #if self.workbook_excel is None:

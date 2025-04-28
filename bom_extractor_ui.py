@@ -47,7 +47,8 @@ class BOMExtractorApp(tk.Tk):
         self.flagExcelAldreadyCompared = False
         self.dragged_pid_tag = None
         self.drag_label = None
-
+        self.flagCTRL = None
+        
         self.highlight_missing = tk.BooleanVar(value=True)  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar(value=True)  # Variable for import missing checkbox
         self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
@@ -86,10 +87,6 @@ class BOMExtractorApp(tk.Tk):
         self.create_menu() 
         self.setup_table_tabs()
         
-
-
-        
-
         
         self.bind_all("<ButtonRelease-1>", self.on_global_button_release)
 
@@ -155,33 +152,18 @@ class BOMExtractorApp(tk.Tk):
         self.table_rev_items_combined.pack(fill="both", expand=True)
         
         self.table_dxf_items_combined.tree.bind("<ButtonPress-1>", self.on_drag_start)
-        #self.table_rev_items_combined.tree.bind("<ButtonRelease-1>", self.on_drop)
         self.table_dxf_items_combined.tree.bind("<B1-Motion>", self.on_drag_motion)
         # Enable dragging from right (revised) table
         self.table_rev_items_combined.tree.bind("<ButtonPress-1>", self.on_drag_start)
         self.table_rev_items_combined.tree.bind("<B1-Motion>", self.on_drag_motion)
-
+        
+        self.table_dxf_items_combined.tree.bind("<ButtonRelease-1>", self.on_drop)
+        self.table_rev_items_combined.tree.bind("<ButtonRelease-1>", self.on_drop)
         
     def on_drag_start(self, event):
-        # if not (event.state & 0x0004):  # 0x0004 = Ctrl key mask
-        #     print("Drag not started: Ctrl not pressed.")
-        #     return
-    
-        # item_id = self.table_dxf_items_combined.tree.identify_row(event.y)
-        # if item_id:
-        #     values = self.table_dxf_items_combined.tree.item(item_id, "values")
-        #     pid_index = self.table_dxf_items_combined.columns.index("P&ID TAG")
-        #     self.dragged_pid_tag = values[pid_index]
-        #     print(f"Drag started with P&ID TAG: {self.dragged_pid_tag}")
-    
-        #     # Create a floating label
-        #     if self.drag_label:
-        #         self.drag_label.destroy()
-    
-        #     self.drag_label = tk.Label(self, text=self.dragged_pid_tag, bg="yellow", relief="solid", borderwidth=1)
-        #     self.drag_label.place(x=event.x_root - self.winfo_rootx(), y=event.y_root - self.winfo_rooty())
         if not (event.state & 0x0004):  # Ctrl key pressed
             return
+        
         tree = event.widget
         item_id = tree.identify_row(event.y)
         if not item_id:
@@ -199,11 +181,13 @@ class BOMExtractorApp(tk.Tk):
             return  # Not over a valid target
         
         if target_table:
+            self.flagCTRL = False
             self.start_drag_table = target_table
             pid_index = target_table.columns.index("P&ID TAG")
             self.dragged_pid_tag = values[pid_index]
     
             if self.drag_label:
+                self.flagCTRL = False
                 self.drag_label.destroy()
     
             self.drag_label = tk.Label(self, text=self.dragged_pid_tag, bg="yellow", relief="solid", borderwidth=1)
@@ -213,12 +197,96 @@ class BOMExtractorApp(tk.Tk):
 
     def on_drag_motion(self, event):
         if not self.dragged_pid_tag:
-            return
+            return    
+        if not(0x0004):
+            if self.drag_label:
+                self.drag_label.destroy()
+                self.drag_label = None
+                self.start_drag_table = None
+                self.flagCTRL = False
+                self.dragged_pid_tag = None
         widget = event.widget.winfo_containing(event.x_root, event.y_root)
         if self.drag_label:
             self.drag_label.place(x=event.x_root - self.winfo_rootx(), y=event.y_root - self.winfo_rooty())
             
-        # Check if hovering over revised table (right) as before
+
+
+    # def on_drop(self, event):
+    #     print('button released!!')
+    #     if not self.dragged_pid_tag:
+    #         return    
+    #     widget = event.widget.winfo_containing(event.x_root, event.y_root)
+    #     print('widget:'+str(widget))
+    #     # Check if hovering over revised table (right) as before
+    #     if widget == self.table_rev_items_combined.tree:
+    #         target_table = self.table_rev_items_combined
+    #         target_json = self.bom_revisedJSON
+    #     elif widget == self.table_dxf_items_combined.tree:
+    #         target_table = self.table_dxf_items_combined
+    #         target_json = self.bom_dxf
+    #     else:
+    #         return  # Not over a valid target
+        
+    #     item_id = target_table.tree.identify_row(event.y)
+    #     if not item_id:
+    #         return
+        
+    #     if self.start_drag_table ==  target_table:
+    #         return
+    #     # Check if the mouse is over the right table
+    #     # if widget == self.table_rev_items_combined.tree:
+    #     #     item_id = target_table.tree.identify_row(event.y)
+
+    #     if item_id and self.dragged_pid_tag :
+    #         print("Simulated drop over:", item_id)
+
+    #         current_values = list(target_table.tree.item(item_id, "values"))
+    #         pid_index = target_table.columns.index("P&ID TAG")
+    #         current_values[pid_index] = self.dragged_pid_tag
+    #         target_table.tree.item(item_id, values=current_values)
+
+    #         tree_index = target_table.tree.index(item_id)
+    #         data_key = list(target_table.filtered_data.keys())[tree_index]
+    #         if target_json and data_key in self.bom_revisedJSON:
+    #             target_json[data_key]["P&ID TAG"] = self.dragged_pid_tag
+    #             target_json[data_key]["flagSynchronized"] = False
+    #             print(f"Updated row {data_key} with {self.dragged_pid_tag}")
+    #             L, N, D = parse_tag_code(self.dragged_pid_tag)
+    #             mapping = {}
+    #             if target_table == self.table_dxf_items_combined:
+    #                 mapping = header_mapping_reverse
+    #             data_key_L = mapping.get('L', 'L')  # actual dict key
+    #             data_key_N = mapping.get('N', 'N')  # actual dict key
+    #             data_key_D = mapping.get('D', 'D')  # actual dict key
+    #             target_json[data_key][data_key_L] = str(L)
+    #             target_json[data_key][data_key_N] = str(N)
+    #             target_json[data_key][data_key_D] = str(D)
+    #             #print(self.bom_revisedJSON[data_key]
+    #             self.compare_bom_core()
+    #             self.updateTableRevBOM()
+
+    #         # Reset after drop
+    #         self.dragged_pid_tag = None
+            
+    #         if self.drag_label:
+    #             self.drag_label.destroy()
+    #             self.drag_label = None
+    #             self.start_drag_table = None
+    #             self.flagCTRL = False
+    def on_drop(self, event):
+        print('button released!!')
+        if not self.dragged_pid_tag:
+            return
+    
+        # Destroy the drag label immediately
+        if self.drag_label:
+            self.drag_label.destroy()
+            self.drag_label = None
+    
+        widget = event.widget.winfo_containing(event.x_root, event.y_root)
+        print('widget:', widget)
+    
+        # Check if hovering over revised or dxf table
         if widget == self.table_rev_items_combined.tree:
             target_table = self.table_rev_items_combined
             target_json = self.bom_revisedJSON
@@ -227,53 +295,50 @@ class BOMExtractorApp(tk.Tk):
             target_json = self.bom_dxf
         else:
             return  # Not over a valid target
-        
+    
         item_id = target_table.tree.identify_row(event.y)
         if not item_id:
             return
-        
-        if self.start_drag_table ==  target_table:
+    
+        if self.start_drag_table == target_table:
             return
-        # Check if the mouse is over the right table
-        # if widget == self.table_rev_items_combined.tree:
-        #     item_id = target_table.tree.identify_row(event.y)
-
-        if item_id and self.dragged_pid_tag :
+    
+        if item_id and self.dragged_pid_tag:
             print("Simulated drop over:", item_id)
-
+    
             current_values = list(target_table.tree.item(item_id, "values"))
             pid_index = target_table.columns.index("P&ID TAG")
             current_values[pid_index] = self.dragged_pid_tag
             target_table.tree.item(item_id, values=current_values)
-
+    
             tree_index = target_table.tree.index(item_id)
             data_key = list(target_table.filtered_data.keys())[tree_index]
-            if target_json and data_key in self.bom_revisedJSON:
+    
+            if target_json and data_key in target_json:
                 target_json[data_key]["P&ID TAG"] = self.dragged_pid_tag
                 target_json[data_key]["flagSynchronized"] = False
                 print(f"Updated row {data_key} with {self.dragged_pid_tag}")
+    
+                # Update L, N, D fields
                 L, N, D = parse_tag_code(self.dragged_pid_tag)
                 mapping = {}
                 if target_table == self.table_dxf_items_combined:
                     mapping = header_mapping_reverse
-                data_key_L = mapping.get('L', 'L')  # actual dict key
-                data_key_N = mapping.get('N', 'N')  # actual dict key
-                data_key_D = mapping.get('D', 'D')  # actual dict key
+                data_key_L = mapping.get('L', 'L')
+                data_key_N = mapping.get('N', 'N')
+                data_key_D = mapping.get('D', 'D')
                 target_json[data_key][data_key_L] = str(L)
                 target_json[data_key][data_key_N] = str(N)
                 target_json[data_key][data_key_D] = str(D)
-                #print(self.bom_revisedJSON[data_key])
+    
+                self.compare_bom_core()
                 self.updateTableRevBOM()
+    
+        # Reset dragging variables
+        self.dragged_pid_tag = None
+        self.start_drag_table = None
+        self.flagCTRL = False
 
-            # Reset after drop
-            self.dragged_pid_tag = None
-            
-            if self.drag_label:
-                self.drag_label.destroy()
-                self.drag_label = None
-                self.start_drag_table = None
-
-        
     def on_global_button_release(self, event):
         """Global callback executed on every left mouse button release."""
         self.check_general_buttons()
@@ -620,6 +685,14 @@ class BOMExtractorApp(tk.Tk):
                 messagebox.showerror("Error", f"Failed to export BOM: {e}")
     
 
+    def compare_bom_core(self):
+            # Convert BOM from DXF to JSON
+            self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
+    
+            self.missing_in_revised, self.missing_in_dxf = compare_bomsJSON(
+                self.bom_dxf_JSON_like_xls,
+                self.bom_revisedJSON,
+                )
         
     def compare_bom(self):
         try:

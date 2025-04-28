@@ -385,7 +385,7 @@ class BOMExtractorApp(tk.Tk):
         
     def show_about(self):
         # Show an About dialog with version information
-        about_text = "pyPidBoMExtractor Version 2.2\nDeveloped by Simone Ancellotti\n© 2025"
+        about_text = "pyPidBoMExtractor Version 2.3\nDeveloped by Simone Ancellotti\n© 2025"
         messagebox.showinfo("About", about_text)
 
     def save_settings(self):

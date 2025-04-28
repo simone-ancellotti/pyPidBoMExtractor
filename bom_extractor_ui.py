@@ -48,6 +48,8 @@ class BOMExtractorApp(tk.Tk):
         self.dragged_pid_tag = None
         self.drag_label = None
         self.flagCTRL = None
+        self.undo_stack = []
+
         
         self.highlight_missing = tk.BooleanVar(value=True)  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar(value=True)  # Variable for import missing checkbox
@@ -330,6 +332,7 @@ class BOMExtractorApp(tk.Tk):
                 target_json[data_key][data_key_L] = str(L)
                 target_json[data_key][data_key_N] = str(N)
                 target_json[data_key][data_key_D] = str(D)
+                
     
                 self.compare_bom_core()
                 self.updateTableRevBOM()

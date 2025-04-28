@@ -41,6 +41,8 @@ class FilterableTable(ttk.Frame):
         # Set default filter column.
         self.filter_column = filter_column_default if filter_column_default else columns[0]
         
+        self.copied_row_data = None
+        
         # Configure custom selection color for Treeview
         style = ttk.Style(self)
         style.map("Treeview",
@@ -87,7 +89,10 @@ class FilterableTable(ttk.Frame):
             width = self.column_widths.get(col, self.default_width)
             self.tree.column(col, width=width, anchor="center")
         
-        self.tree.bind("<Control-c>", self._copy_selection_to_clipboard)
+        #self.tree.bind("<Control-c>", self._copy_selection_to_clipboard)
+        self.tree.bind("<Control-c>", self.on_ctrl_c)
+        self.tree.bind("<Control-v>", self.on_ctrl_v)
+        
         self.tree.bind("<Double-1>", self._on_double_click)
         
         # Vertical scrollbar.
@@ -149,23 +154,117 @@ class FilterableTable(ttk.Frame):
             for c in self.colour_mapping.values():
                 self.tree.tag_configure(c, background=c)
                 
-    def _copy_selection_to_clipboard(self, event=None):
-        selection = self.tree.selection()
-        if not selection:
+    # def _copy_selection_to_clipboard(self, event=None):
+    #     selection = self.tree.selection()
+    #     if not selection:
+    #         return
+    
+    #     rows = []
+    #     for item_id in selection:
+    #         row_values = self.tree.item(item_id)["values"]
+    #         row_str = "\t".join(str(v) for v in row_values)
+    #         rows.append(row_str)
+    
+    #     result = "\n".join(rows)
+    #     self.copied_row_data = result
+    #     self.clipboard_clear()
+    #     self.clipboard_append(result)
+    #     self.update()  # Ensures clipboard is updated
+
+    # def on_ctrl_v(self, event=None):
+    #     if not hasattr(self, "copied_row_data") or not self.copied_row_data:
+    #         print("No copied row to paste.")
+    #         return
+    
+    #     selected = self.tree.selection()
+    #     if not selected:
+    #         print("No target row selected to paste into.")
+    #         return
+    
+    #     target_iid = selected[0]
+    #     self.tree.item(target_iid, values=self.copied_row_data)
+    
+    #     # Update internal source data if needed
+    #     tree_index = self.tree.index(target_iid)
+    #     if tree_index < len(self.filtered_data):
+    #         data_key = list(self.filtered_data.keys())[tree_index]
+    #         if data_key in self.data:
+    #             for col, value in zip(self.columns, self.copied_row_data):
+    #                 key = self.mapping.get(col, col)
+    #                 self.data[data_key][key] = value
+    #             # optional: set flag to not synchronized
+    #             self.data[data_key]["flagSynchronized"] = False
+    
+    #     print("Pasted copied row into selected row.")
+    def on_ctrl_c(self, event=None):
+        selected = self.tree.selection()
+        if not selected:
+            print("No row selected to copy.")
             return
     
-        rows = []
-        for item_id in selection:
-            row_values = self.tree.item(item_id)["values"]
-            row_str = "\t".join(str(v) for v in row_values)
-            rows.append(row_str)
+        target_iid = selected[0]
+        row_values = self.tree.item(target_iid, "values")
+        if not row_values:
+            return
     
-        result = "\n".join(rows)
-        self.clipboard_clear()
-        self.clipboard_append(result)
-        self.update()  # Ensures clipboard is updated
+        # Store in real clipboard as tab-separated text
+        try:
+            self.clipboard_clear()
+            self.clipboard_append('\t'.join(str(v) for v in row_values))
+            print("Row copied to clipboard:", row_values)
+        except Exception as e:
+            print("Clipboard error:", e)
+            
+    def on_ctrl_v(self, event=None):
+        try:
+            clipboard_text = self.clipboard_get()
+        except tk.TclError:
+            print("Clipboard is empty.")
+            return
+    
+        pasted_values = clipboard_text.strip().split('\t')
+        print("Pasted values:", pasted_values)
+    
+        selected = self.tree.selection()
+        if not selected:
+            print("No target row selected to paste into.")
+            return
+    
+        target_iid = selected[0]
+    
+        # ✍ Fix: Pad pasted values if too few
+        if len(pasted_values) < len(self.columns):
+            missing = len(self.columns) - len(pasted_values)
+            pasted_values.extend([""] * missing)
+    
+        # ✍ Fix: Or truncate if too many
+        if len(pasted_values) > len(self.columns):
+            pasted_values = pasted_values[:len(self.columns)]
+    
+        # Now safe to update
+        self.tree.item(target_iid, values=pasted_values)
+    
+        # Update internal data
+        tree_index = self.tree.index(target_iid)
+        if tree_index < len(self.filtered_data):
+            data_key = list(self.filtered_data.keys())[tree_index]
+            if data_key in self.data:
+                for col, value in zip(self.columns, pasted_values):
+                    key = self.mapping.get(col, col)
+                    self.data[data_key][key] = value
+                self.data[data_key]["flagSynchronized"] = False
+    
+        print(f"Pasted into row {target_iid}.")
+        self._flash_row(target_iid)
 
+
+    def _flash_row(self, item_id):
+        original_color = self.tree.item(item_id, "tags")
+        self.tree.item(item_id, tags=("flash",))
+        self.tree.tag_configure("flash", background="#ffff99")  # light yellow
+        self.after(500, lambda: self.tree.item(item_id, tags=original_color))
     
+        
     def _on_double_click(self, event):
         region = self.tree.identify("region", event.x, event.y)
         if region != "cell":

@@ -180,7 +180,10 @@ def sort_bom_by_pid_tag(bom_dict):
     )
     return {key: value for key, value in sorted_items}
     
-def export_bom_to_excel(bom_data, template_path, output_path, highlight_duplicate=False):
+def export_bom_to_excel(bom_data, template_path, output_path, 
+                        highlight_duplicate=False,
+                        duplicate_color="800080",
+                        ):
     # Load the template file
     workbook = openpyxl.load_workbook(template_path)
     sheet = workbook.active  # Assuming the BOM sheet is the active one
@@ -222,7 +225,7 @@ def export_bom_to_excel(bom_data, template_path, output_path, highlight_duplicat
     # Trigger duplicate highlighting if the flag is true
     if highlight_duplicate:
          print("\nHighlighting Duplicate 'P&ID TAG' Values in Purple:")
-         highlight_duplicate_tags_in_excel(sheet, 'P&ID TAG', color="800080")  # Purple
+         highlight_duplicate_tags_in_excel(sheet, 'P&ID TAG', color=duplicate_color)  # Purple
     # Save the workbook with a new name
     workbook.save(output_path)
     print(f"BOM successfully exported to {output_path}")

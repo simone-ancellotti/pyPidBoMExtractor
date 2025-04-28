@@ -24,7 +24,7 @@ class BOMExtractorApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("BOM Extractor Application")
-        self.geometry("610x440")  # Adjusted window size for better layout
+        self.geometry("610x480")  # Adjusted window size for better layout
         
         icon_image = tk.PhotoImage(file="bom_valve_icon.png")
         self.iconphoto(True, icon_image)
@@ -495,26 +495,30 @@ class BOMExtractorApp(tk.Tk):
         self.revised_label = tk.Label(self.main_tab, text="No Revised BOM uploaded")
         self.revised_label.grid(row=4, column=1, padx=20, pady=10, sticky='e')
 
+        self.revised_button = tk.Button(self.main_tab, text="Reload BOM Excel", 
+                                        command=self.upload_revised_bom_core)
+        self.revised_button.grid(row=5, column=0, padx=20, pady=10, sticky='w')
+        
         # Checkbox to select whether to highlight missing components (Center) 
         self.highlight_checkbox = tk.Checkbutton(self.main_tab, text="Highlight in RED component \n in revised BOM but not in DXF",
                                                  variable=self.highlight_missing,
                                                  command=self.updateTableRevBOM)
-        self.highlight_checkbox.grid(row=5, column=0, padx=20, pady=10, sticky='w')
+        self.highlight_checkbox.grid(row=6, column=0, padx=20, pady=10, sticky='w')
 
         # Checkbox to select whether to import missing DXF items into Excel (Center)
         self.import_checkbox = tk.Checkbutton(self.main_tab, text="Import DXF items, which are \n missing in revised BOM,\n into new Excel. Highlight in GREY", 
                                               variable=self.import_missing,
                                               command=self.updateTableRevBOM)
-        self.import_checkbox.grid(row=6, column=0, padx=20, pady=10, sticky='e')
+        self.import_checkbox.grid(row=7, column=0, padx=20, pady=10, sticky='e')
         
         self.import_checkbox = tk.Checkbutton(self.main_tab, text="Highlight in PURPLE \n duplicated items in Excel", 
                                               variable=self.highlight_duplicate,
                                               command=self.updateTableRevBOM)
-        self.import_checkbox.grid(row=5, column=1, padx=20, pady=10, sticky='e')
+        self.import_checkbox.grid(row=6, column=1, padx=20, pady=10, sticky='e')
         
         # Checkbox to select whether save new file or modifiy exisiting file
         self.import_checkbox = tk.Checkbutton(self.main_tab, text="Save as new updated excell File", variable=self.flagSaveNewExcellFile)
-        self.import_checkbox.grid(row=6, column=1, padx=20, pady=10, sticky='e')
+        self.import_checkbox.grid(row=7, column=1, padx=20, pady=10, sticky='e')
 
         # Button to Compare BOM (Bottom-Center)
         self.compare_button = tk.Button(self.main_tab, text="Compare BOM vs DXF", state=tk.DISABLED, command=self.compare_bom)
@@ -597,12 +601,7 @@ class BOMExtractorApp(tk.Tk):
                 #self.export_button.config(state=tk.NORMAL)
                 self.check_ready_to_exportBOM1()
 
-    def upload_revised_bom(self):
-        # Open file dialog to select a revised BOM Excel file
-        new_imported_xls_file_rev = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
-        if new_imported_xls_file_rev != '':
-            self.revised_excel_file = new_imported_xls_file_rev
-            self.flagExcelAldreadyCompared = False
+    def upload_revised_bom_core(self):
         if self.revised_excel_file:
             logging.info(f"Uploaded Revised BOM Excel file: {self.revised_excel_file}")
             self.bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
@@ -610,6 +609,16 @@ class BOMExtractorApp(tk.Tk):
             #self.compare_button.config(state=tk.NORMAL)
             self.check_ready_to_export_revised_BOM2()
             self.updateTableRevBOM()
+            
+    def upload_revised_bom(self):
+        # Open file dialog to select a revised BOM Excel file
+        new_imported_xls_file_rev = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
+        if new_imported_xls_file_rev != '':
+            self.revised_excel_file = new_imported_xls_file_rev
+            self.flagExcelAldreadyCompared = False
+        #load the file XLS and import as JSON
+        self.upload_revised_bom_core()
+
 
     def check_ready_to_extract(self):
         # Enable "Extract BOM" button if both DXF and Template Excel are uploaded
@@ -655,6 +664,7 @@ class BOMExtractorApp(tk.Tk):
                bom_filtered = filterBOM_Ignore(self.bom_dxf,tagToIgnore,tagsvaluesToIgnore)
                self.bom_dxf = bom_filtered
            
+           self.flagExcelAldreadyCompared = False
            # Enable the Export button once BOM is extracted
            self.check_ready_to_exportBOM1()
            #self.updateTableDXF()
@@ -684,9 +694,13 @@ class BOMExtractorApp(tk.Tk):
     
         if output_path:
             try:
-                export_bom_to_excel(self.bom_dxf, self.template_BOM_xls_path, 
-                                    output_path,
-                                    self.highlight_duplicate)
+                export_bom_to_excel(
+                    bom_data = self.bom_dxf,
+                    template_path = self.template_BOM_xls_path, 
+                    output_path = output_path,
+                    highlight_duplicate = self.highlight_duplicate,
+                    duplicate_color = self.duplicate_color
+                    )
                 messagebox.showinfo("Success", f"BOM successfully exported to {output_path}")
             except Exception as e:
                 logging.error(f"Failed to export BOM: {e}")
@@ -697,13 +711,14 @@ class BOMExtractorApp(tk.Tk):
             # Convert BOM from DXF to JSON
             #print("🔵 compare_bom_core() called from callback")
             # Convert BOM from DXF to JSON
-            self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
-    
-            self.missing_in_revised, self.missing_in_dxf = compare_bomsJSON(
-                self.bom_dxf_JSON_like_xls,
-                self.bom_revisedJSON,
-                )
-            self.flagExcelAldreadyCompared = True
+            if self.bom_dxf and self.bom_revisedJSON:
+                self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
+        
+                self.missing_in_revised, self.missing_in_dxf = compare_bomsJSON(
+                    self.bom_dxf_JSON_like_xls,
+                    self.bom_revisedJSON,
+                    )
+                self.flagExcelAldreadyCompared = True
                 
             #self.update_color_mapping_2nd_table()
             #print(self.colour_mapping2)

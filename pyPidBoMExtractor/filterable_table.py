@@ -12,7 +12,9 @@ from .utils import parse_tag_code
 
 class FilterableTable(ttk.Frame):
     def __init__(self, master, data, columns, mapping=None, filter_column_default=None, 
-                 colour_mapping=None, column_widths=None, default_width=100,**kwargs):
+                 colour_mapping=None, column_widths=None, default_width=100,
+                 callback_on_modify=None,  # ⬅️ new parameter
+                 **kwargs):
         """
         A general-purpose widget that displays tabular data with filtering controls.
         
@@ -48,7 +50,8 @@ class FilterableTable(ttk.Frame):
         style.map("Treeview",
                   background=[("selected", "#e0f7fa")],   # Light cyan
                   foreground=[("selected", "black")])
-        
+        # Store the callback
+        self.callback_on_modify = callback_on_modify
         
         # Create filter controls.
         self._create_filter_controls()
@@ -253,7 +256,9 @@ class FilterableTable(ttk.Frame):
                     key = self.mapping.get(col, col)
                     self.data[data_key][key] = value
                 self.data[data_key]["flagSynchronized"] = False
-    
+        
+        if self.callback_on_modify:
+            self.callback_on_modify()
         print(f"Pasted into row {target_iid}.")
         self._flash_row(target_iid)
 
@@ -315,6 +320,9 @@ class FilterableTable(ttk.Frame):
                         self._populate_table()
                     
                     print(f"Updating row {data_row_id}, key '{data_key}' with '{new_value}'")
+                    if self.callback_on_modify:
+                        self.callback_on_modify()
+                        print("callback_on_modify triggered after manual edit")
 
             except Exception as e:
                 print(f"Update failed: {e}")

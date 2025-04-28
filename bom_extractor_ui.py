@@ -103,6 +103,7 @@ class BOMExtractorApp(tk.Tk):
             colour_mapping = None,
             column_widths=self.column_widths, 
             default_width=100,
+            callback_on_modify=self.compare_bom_core,
         )
         self.table_dxf_items_filterable.pack(fill="both", expand=True)
         
@@ -117,6 +118,7 @@ class BOMExtractorApp(tk.Tk):
             colour_mapping = None,
             column_widths=self.column_widths, 
             default_width=100,
+            callback_on_modify=self.compare_bom_core,
         )
         self.table_rev_tab_filterable.pack(fill="both", expand=True)
         
@@ -138,6 +140,7 @@ class BOMExtractorApp(tk.Tk):
             colour_mapping = None,
             column_widths=self.column_widths, 
             default_width=100,
+            callback_on_modify=self.compare_bom_core,
         )
         self.table_dxf_items_combined.pack(fill="both", expand=True)
 
@@ -150,6 +153,7 @@ class BOMExtractorApp(tk.Tk):
             colour_mapping = None,
             column_widths=self.column_widths, 
             default_width=100,
+            callback_on_modify=self.compare_bom_core,
         )
         self.table_rev_items_combined.pack(fill="both", expand=True)
         
@@ -276,7 +280,6 @@ class BOMExtractorApp(tk.Tk):
     #             self.start_drag_table = None
     #             self.flagCTRL = False
     def on_drop(self, event):
-        print('button released!!')
         if not self.dragged_pid_tag:
             return
     
@@ -690,12 +693,20 @@ class BOMExtractorApp(tk.Tk):
 
     def compare_bom_core(self):
             # Convert BOM from DXF to JSON
+            #print("🔵 compare_bom_core() called from callback")
+            # Convert BOM from DXF to JSON
             self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
     
             self.missing_in_revised, self.missing_in_dxf = compare_bomsJSON(
                 self.bom_dxf_JSON_like_xls,
                 self.bom_revisedJSON,
                 )
+            self.flagExcelAldreadyCompared = True
+                
+            #self.update_color_mapping_2nd_table()
+            #print(self.colour_mapping2)
+            
+            self.updateTableRevBOM()
         
     def compare_bom(self):
         try:
@@ -709,35 +720,37 @@ class BOMExtractorApp(tk.Tk):
             if self.bom_revisedJSON=={}:
                 self.bom_revisedJSON = load_bom_from_excel_to_JSON(self.revised_excel_file)
     
-            # Convert BOM from DXF to JSON
-            self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
+            self.compare_bom_core()
+            
+            # # Convert BOM from DXF to JSON
+            # self.bom_dxf_JSON_like_xls = convert_bom_dxf_to_JSON(self.bom_dxf)
     
 
     
-            # Perform BOM comparison
-            # self.missing_in_revised, self.missing_in_dxf, self.workbook_excel = compare_bomsJSON(
+            # # Perform BOM comparison
+            # # self.missing_in_revised, self.missing_in_dxf, self.workbook_excel = compare_bomsJSON(
+            # #     self.bom_dxf_JSON_like_xls,
+            # #     self.bom_revisedJSON,
+            # #     revised_excel_file=output_path,  # Save to the selected path
+            # #     highlight_duplicate=highlight_duplicate, 
+            # #     highlight_missing=highlight_missing,
+            # #     import_missingDXF2BOM=import_missingDXF2BOM
+            # #     )
+            # # Perform BOM comparison without modifying the xls file
+            # self.missing_in_revised, self.missing_in_dxf = compare_bomsJSON(
             #     self.bom_dxf_JSON_like_xls,
             #     self.bom_revisedJSON,
-            #     revised_excel_file=output_path,  # Save to the selected path
-            #     highlight_duplicate=highlight_duplicate, 
-            #     highlight_missing=highlight_missing,
-            #     import_missingDXF2BOM=import_missingDXF2BOM
+            #     # highlight_duplicate=highlight_duplicate, 
+            #     # highlight_missing=highlight_missing,
+            #     # import_missingDXF2BOM=import_missingDXF2BOM
             #     )
-            # Perform BOM comparison without modifying the xls file
-            self.missing_in_revised, self.missing_in_dxf = compare_bomsJSON(
-                self.bom_dxf_JSON_like_xls,
-                self.bom_revisedJSON,
-                # highlight_duplicate=highlight_duplicate, 
-                # highlight_missing=highlight_missing,
-                # import_missingDXF2BOM=import_missingDXF2BOM
-                )
             
-            self.flagExcelAldreadyCompared = True
+            # self.flagExcelAldreadyCompared = True
                 
-            #self.update_color_mapping_2nd_table()
-            #print(self.colour_mapping2)
+            # #self.update_color_mapping_2nd_table()
+            # #print(self.colour_mapping2)
             
-            self.updateTableRevBOM()
+            # self.updateTableRevBOM()
 
             
             # print('missing_in_revised: '+str(missing_in_revised))

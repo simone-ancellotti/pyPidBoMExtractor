@@ -63,7 +63,7 @@ def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf,flagUpdateJSON_dxf=False):
                             if flagUpdateJSON_dxf:
                                 dxf_item_found[key_dxf] =  text_xls
                 else: 
-                    rows_xls_no.append()
+                    rows_xls_no.append(key_xls)
     return rows_xls_no
            
 def update_dxfJSON_into_dxf_drawing(bom_dxf):

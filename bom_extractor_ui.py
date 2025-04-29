@@ -26,8 +26,10 @@ class BOMExtractorApp(tk.Tk):
         self.title("BOM Extractor Application")
         self.geometry("610x480")  # Adjusted window size for better layout
         
-        icon_image = tk.PhotoImage(file="bom_valve_icon.png")
-        self.iconphoto(True, icon_image)
+        icon_path = r"bom_valve_icon.png"
+        if os.path.isfile(icon_path):
+            icon_image = tk.PhotoImage(file=icon_path)
+            self.iconphoto(True, icon_image)
         
         # Variables to hold file paths and options
         self.dwg_file = None
@@ -356,7 +358,7 @@ class BOMExtractorApp(tk.Tk):
         self.dragged_pid_tag = None
         self.start_drag_table = None
         self.flagCTRL = False
-
+        
     def on_global_button_release(self, event):
         """Global callback executed on every left mouse button release."""
         self.check_general_buttons()
@@ -477,14 +479,18 @@ class BOMExtractorApp(tk.Tk):
         self.dxf_label.grid(row=1, column=0, padx=20, pady=5, sticky='w')
 
         # Upload Template Button and Label (Top-right)
-        self.template_button = tk.Button(self.main_tab, text="Upload Template Excel", command=self.upload_template)
+        self.template_button = tk.Button(self.main_tab, 
+                                         text="Upload Template Excel", 
+                                         command=self.upload_template)
         self.template_button.grid(row=0, column=1, padx=20, pady=10, sticky='e')
 
         self.template_label = tk.Label(self.main_tab, text="No Template Excel uploaded")
         self.template_label.grid(row=1, column=1, padx=20, pady=5, sticky='e')
         
         # Checkbox to select whether to import missing DXF items into Excel (Center)
-        self.import_checkbox = tk.Checkbutton(self.main_tab, text="Ignore WE TE FE", variable=self.flagIgnoreWETEFE)
+        self.import_checkbox = tk.Checkbutton(self.main_tab, 
+                                              text="Ignore WE TE FE", 
+                                              variable=self.flagIgnoreWETEFE)
         self.import_checkbox.grid(row=2, column=0, padx=20, pady=10, sticky='e')
 
         # # Extract BOM Button (Center)
@@ -812,7 +818,7 @@ class BOMExtractorApp(tk.Tk):
             # print('missing_in_revised: '+str(missing_in_revised))
             # print('missing_in_dxf: '+str(missing_in_dxf))
             # Display comparison results
-            messagebox.showinfo("Comparison Results", f"Missing in Revised: {self.missing_in_revised}\nMissing in DXF: {self.missing_in_dxf}\nDuplicates in DXF: {self.duplicates_DXF}\nDuplicates in XLS: {self.duplicates_XLS}")
+            messagebox.showinfo("Comparison Results", f"Missing in Revised XLS: {self.missing_in_revised}\nMissing in DXF: {self.missing_in_dxf}\nDuplicates in DXF: {self.duplicates_DXF}\nDuplicates in XLS: {self.duplicates_XLS}")
             
             # if flagSaveNewExcellFile:
             #     rev_excel_file_name = os.path.basename(self.revised_excel_file)

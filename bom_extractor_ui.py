@@ -412,7 +412,7 @@ class BOMExtractorApp(tk.Tk):
         save_menu = tk.Menu(file_menu, tearoff=0)
         
         save_menu.add_separator()
-        save_menu.add_command(label="Save revised xls BOM", command=self.exportNewExcellFile)
+        save_menu.add_command(label="Save revised XLS BOM", command=self.exportNewExcellFile)
         save_menu.add_separator()
         save_menu.add_command(label="Save updated DXF", command=self.save_dxf_windows)
         
@@ -420,10 +420,16 @@ class BOMExtractorApp(tk.Tk):
         file_menu.add_cascade(label="Save", menu=save_menu)
         
         file_menu.add_separator()
+        file_menu.add_command(label="Compare XLS vs DXF (CTRL+Q)", command=self.compare_bom)
+        file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.quit)
         
         # Add File menu to the menubar.
         menubar.add_cascade(label="File", menu=file_menu)
+        
+        edit_menu = tk.Menu(menubar, tearoff=0)
+        edit_menu.add_command(label="Undo (CTRL+Z)", command=self.undo_last_change)
+        menubar.add_cascade(label="Edit", menu=edit_menu)
         
         # Create a Help menu.
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -448,7 +454,8 @@ class BOMExtractorApp(tk.Tk):
             "import_missing": self.import_missing.get(),
             "highlight_duplicate": self.highlight_duplicate.get(),
             "flagSaveNewExcellFile": self.flagSaveNewExcellFile.get(),
-            "flagIgnoreWETEFE": self.flagIgnoreWETEFE.get()
+            "flagIgnoreWETEFE": self.flagIgnoreWETEFE.get(),
+            "flag_drag_only_tag": self.flag_drag_only_tag.get(),
         }
         
         file = filedialog.asksaveasfilename(
@@ -485,6 +492,7 @@ class BOMExtractorApp(tk.Tk):
                 self.highlight_duplicate.set(settings.get("highlight_duplicate", False))
                 self.flagSaveNewExcellFile.set(settings.get("flagSaveNewExcellFile", True))
                 self.flagIgnoreWETEFE.set(settings.get("flagIgnoreWETEFE", False))
+                self.flag_drag_only_tag.set(settings.get("flag_drag_only_tag", False))
                 
                 # Optionally, update your UI labels to reflect loaded file paths:
                 if self.dwg_file:
@@ -598,7 +606,7 @@ class BOMExtractorApp(tk.Tk):
 
         # Button to Compare BOM (Bottom-Center)
         self.compare_button = tk.Button(self.main_tab,
-                                        text="Compare BOM vs DXF",
+                                        text="Compare XLS vs DXF",
                                         state=tk.DISABLED,
                                         command=self.compare_bom)
         self.compare_button.grid(row=8, column=0, columnspan=1, padx=10, pady=20)

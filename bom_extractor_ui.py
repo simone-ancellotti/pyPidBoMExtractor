@@ -62,6 +62,8 @@ class BOMExtractorApp(tk.Tk):
         self.highlight_duplicate = tk.BooleanVar(value=True)  # Variable for highlight duplicate
         self.flagSaveNewExcellFile = tk.BooleanVar(value=True) 
         self.flagIgnoreWETEFE = tk.BooleanVar(value=False)
+        self.flag_drag_only_tag = tk.BooleanVar(value=True)
+        
         
         #Create a Notebook (tabs container)
         self.notebook = ttk.Notebook(self)
@@ -340,7 +342,8 @@ class BOMExtractorApp(tk.Tk):
             tree_index = target_table.tree.index(item_id)
             data_key = list(target_table.filtered_data.keys())[tree_index]
             
-            flagDragAllRow = True 
+             
+            flagDragAllRow = not(self.flag_drag_only_tag.get())
             
             if target_json and data_key in target_json:
                 if target_json[data_key]["P&ID TAG"] != self.dragged_pid_tag or flagDragAllRow:
@@ -555,6 +558,13 @@ class BOMExtractorApp(tk.Tk):
                                         text="Reload BOM Excel", 
                                         command=self.upload_revised_bom_core)
         self.revised_button.grid(row=5, column=0, padx=20, pady=10, sticky='w')
+        
+        self.drag_only_tag = tk.Checkbutton(
+                                        self.main_tab, 
+                                        text="Drag and Drop only tags",
+                                        variable=self.flag_drag_only_tag,
+                                        )
+        self.drag_only_tag.grid(row=5, column=1, padx=20, pady=10, sticky='w')
         
         # Checkbox to select whether to highlight missing components (Center) 
         self.highlight_checkbox = tk.Checkbutton(

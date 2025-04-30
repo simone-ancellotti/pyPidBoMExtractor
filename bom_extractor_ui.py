@@ -5,7 +5,7 @@ import logging
 from pyPidBoMExtractor.bom_generator import export_bom_to_excel, extract_bom_from_dxf,filterBOM_Ignore
 from pyPidBoMExtractor.bom_generator import compare_bomsJSON,convert_bom_dxf_to_JSON,load_bom_from_excel_to_JSON
 from pyPidBoMExtractor.bom_generator import header_mapping, header_mapping_reverse ,make_color_mapping,find_duplicates,update_XLS_add_missing_items_highlight
-from pyPidBoMExtractor.importerdxf import import_BOMjson_into_DXF,update_dxfJSON_into_dxf_drawing
+from pyPidBoMExtractor.importerdxf import import_BOMjson_into_DXF,update_dxfJSON_into_dxf_drawing,get_row_by_field,tags_xls2dxf,tags_dxf2xls
 from pyPidBoMExtractor.filterable_table import FilterableTable
 from pyPidBoMExtractor.utils import parse_tag_code
 import os
@@ -339,15 +339,18 @@ class BOMExtractorApp(tk.Tk):
     
             tree_index = target_table.tree.index(item_id)
             data_key = list(target_table.filtered_data.keys())[tree_index]
-    
+            
+            flagDragAllRow = True 
+            
             if target_json and data_key in target_json:
-                if target_json[data_key]["P&ID TAG"] != self.dragged_pid_tag:
+                if target_json[data_key]["P&ID TAG"] != self.dragged_pid_tag or flagDragAllRow:
                     self.register_undo_state(source = target_json, row_id= data_key)
                     
                     target_json[data_key]["P&ID TAG"] = self.dragged_pid_tag
+
                     target_json[data_key]["flagSynchronized"] = False
                     print(f"Updated row {data_key} with {self.dragged_pid_tag}")
-        
+                    
                     # Update L, N, D fields
                     L, N, D = parse_tag_code(self.dragged_pid_tag)
                     mapping = {}
@@ -359,6 +362,25 @@ class BOMExtractorApp(tk.Tk):
                     target_json[data_key][data_key_L] = str(L)
                     target_json[data_key][data_key_N] = str(N)
                     target_json[data_key][data_key_D] = str(D)
+                    
+                    
+                    if flagDragAllRow:
+                        row_ii = get_row_by_field(self.start_drag_table.data , 
+                                                  "P&ID TAG", 
+                                                  self.dragged_pid_tag , 
+                                                  case_sensitive=True) 
+                        mapping2 = tags_xls2dxf
+                        if self.start_drag_table == self.table_dxf_items_combined:
+                            mapping2 = tags_dxf2xls
+                        # print(row_ii)
+                        # print(target_json[data_key])
+                        # print(mapping2)
+                        for col_key in row_ii.keys():
+                            #print(col_key)
+                            if not(col_key in ('#','L','N','D',"P&ID TAG")):
+                                data_key_i = mapping2.get(col_key, col_key)
+                                new_value = row_ii[col_key]
+                                target_json[data_key][data_key_i] = str(new_value)
                     
         
                     self.compare_bom_core()

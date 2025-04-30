@@ -636,8 +636,9 @@ class BOMExtractorApp(tk.Tk):
              self.table_dxf_items_combined.set_data(self.bom_dxf,self.colour_mapping1)
                  
     def upload_dxf(self):
-        self.dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
-        if self.dwg_file:
+        new_dwg_file = filedialog.askopenfilename(filetypes=[("DXF files", "*.dxf")])
+        if new_dwg_file and new_dwg_file!='':
+            self.dwg_file = new_dwg_file
             self.dxf_label.config(text=os.path.basename(self.dwg_file))
             logging.info(f"Uploaded DXF file: {self.dwg_file}")
         self.check_ready_to_extract()

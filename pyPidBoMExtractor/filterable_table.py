@@ -120,6 +120,7 @@ class FilterableTable(ttk.Frame):
         filter_key = self.mapping.get(selected_col, selected_col)
         filter_text = self.filter_text_var.get().lower()
         
+        
         self.filtered_data = {}
         for row_id, row in self.data.items():
             cell_value = str(row.get(filter_key, "")).lower()
@@ -319,15 +320,21 @@ class FilterableTable(ttk.Frame):
                             self.data[data_row_id][data_key_L] = str(L)
                             self.data[data_row_id][data_key_N] = str(N)
                             self.data[data_row_id][data_key_D] = str(D)
-                            self._populate_table()
+                            #self._populate_table()
                     if data_key==data_key_L or data_key==data_key_N or data_key==data_key_D:
                         new_L = str(self.data[data_row_id][data_key_L]).strip()
                         new_N = str(self.data[data_row_id][data_key_N]).strip()
                         new_D = str(self.data[data_row_id][data_key_D]).strip()
                         pid_tag2_updated = new_L+new_N+new_D
                         self.data[data_row_id]['P&ID TAG'] = pid_tag2_updated
-                        self._populate_table()
                     
+                    
+                        
+                        # self._on_filter_change()
+                        #self._populate_table()
+                        
+                        
+                    #self._on_filter_change()
                     print(f"Updating row {data_row_id}, key '{data_key}' with '{new_value}'")
                     if self.callback_on_modify:
                         self.callback_on_modify()
@@ -337,9 +344,11 @@ class FilterableTable(ttk.Frame):
                 print(f"Update failed: {e}")
     
             entry.destroy()
+            self._on_filter_change()
     
         entry.bind("<Return>", on_confirm)
         entry.bind("<FocusOut>", lambda e: entry.destroy())
+        
         column_name = self.columns[col_index]  # display column
         data_key = self.mapping.get(column_name, column_name)  # actual dict key
         print(f"check value updated {self.data[int(row_iid)][data_key]}")
@@ -355,4 +364,5 @@ class FilterableTable(ttk.Frame):
         self.data = new_data
         self.colour_mapping = new_colour_mapping
         self.filtered_data = self.data.copy() if self.data else {}
-        self._populate_table()
+        #self._populate_table()
+        self._on_filter_change()

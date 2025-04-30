@@ -13,7 +13,7 @@ from .utils import parse_tag_code
 class FilterableTable(ttk.Frame):
     def __init__(self, master, data, columns, mapping=None, filter_column_default=None, 
                  colour_mapping=None, column_widths=None, default_width=100,
-                 callback_on_modify=None,  # ⬅️ new parameter
+                 callback_on_modify=None,register_undo_state =None,  # ⬅️ new parameter
                  **kwargs):
         """
         A general-purpose widget that displays tabular data with filtering controls.
@@ -52,6 +52,7 @@ class FilterableTable(ttk.Frame):
                   foreground=[("selected", "black")])
         # Store the callback
         self.callback_on_modify = callback_on_modify
+        self.register_undo_state = register_undo_state
         
         # Create filter controls.
         self._create_filter_controls()
@@ -252,9 +253,12 @@ class FilterableTable(ttk.Frame):
         if tree_index < len(self.filtered_data):
             data_key = list(self.filtered_data.keys())[tree_index]
             if data_key in self.data:
+                if self.register_undo_state:
+                    self.register_undo_state(source = self.data, row_id= data_key)
                 for col, value in zip(self.columns, pasted_values):
-                    key = self.mapping.get(col, col)
-                    self.data[data_key][key] = value
+                    if col!= '#':
+                        key = self.mapping.get(col, col)
+                        self.data[data_key][key] = value
                 self.data[data_key]["flagSynchronized"] = False
         
         if self.callback_on_modify:
@@ -297,6 +301,11 @@ class FilterableTable(ttk.Frame):
                 data_key = self.mapping.get(column_name, column_name)  # actual dict key
                 #print(f"Updating row {data_row_id}, key '{data_key}' with '{new_value}'")
                 if data_row_id in self.data and (current_value!=new_value):
+                    
+                    # save undo register
+                    if self.register_undo_state:
+                        self.register_undo_state(source = self.data, row_id= data_row_id)
+                    
                     self.data[data_row_id][data_key] = new_value  # 🔥 this is the real update
                     self.data[data_row_id]["flagSynchronized"] = False
                     data_key_L = self.mapping.get('L', 'L')  # actual dict key

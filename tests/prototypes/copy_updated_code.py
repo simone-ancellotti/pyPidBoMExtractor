@@ -52,5 +52,5 @@ def copy_folder(src, dst, skip_list):
 
 src = r'C:\ASETS-code\python\pyp-id_finder'
 dst = r'G:\My Drive\ULIX tecnico\Varie\Python\pyp-id_finder'
-skip_list=['.git','build','dist']
+skip_list=['.git','build']
 copy_folder(src, dst, skip_list)

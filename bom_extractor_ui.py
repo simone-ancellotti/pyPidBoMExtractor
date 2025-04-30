@@ -55,6 +55,7 @@ class BOMExtractorApp(tk.Tk):
         self.duplicates_DXF = None
         self.duplicates_XLS = None
 
+        self.undo_stack = []  
         
         self.highlight_missing = tk.BooleanVar(value=True)  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar(value=True)  # Variable for import missing checkbox
@@ -110,6 +111,7 @@ class BOMExtractorApp(tk.Tk):
             column_widths=self.column_widths, 
             default_width=100,
             callback_on_modify=self.compare_bom_core,
+            register_undo_state = self.register_undo_state,
         )
         self.table_dxf_items_filterable.pack(fill="both", expand=True)
         
@@ -125,6 +127,7 @@ class BOMExtractorApp(tk.Tk):
             column_widths=self.column_widths, 
             default_width=100,
             callback_on_modify=self.compare_bom_core,
+            register_undo_state = self.register_undo_state,
         )
         self.table_rev_tab_filterable.pack(fill="both", expand=True)
         
@@ -151,6 +154,7 @@ class BOMExtractorApp(tk.Tk):
             column_widths=self.column_widths, 
             default_width=100,
             callback_on_modify=self.compare_bom_core,
+            register_undo_state = self.register_undo_state,
         )
         self.table_dxf_items_combined.pack(fill="both", expand=True)
         
@@ -168,6 +172,7 @@ class BOMExtractorApp(tk.Tk):
             column_widths=self.column_widths, 
             default_width=100,
             callback_on_modify=self.compare_bom_core,
+            register_undo_state = self.register_undo_state,
         )
         self.table_rev_items_combined.pack(fill="both", expand=True)
         
@@ -179,6 +184,8 @@ class BOMExtractorApp(tk.Tk):
         
         self.table_dxf_items_combined.tree.bind("<ButtonRelease-1>", self.on_drop)
         self.table_rev_items_combined.tree.bind("<ButtonRelease-1>", self.on_drop)
+        
+        self.bind_all("<Control-z>", lambda e: self.undo_last_change())
         
     def on_drag_start(self, event):
         if not (event.state & 0x0004):  # Ctrl key pressed
@@ -334,25 +341,28 @@ class BOMExtractorApp(tk.Tk):
             data_key = list(target_table.filtered_data.keys())[tree_index]
     
             if target_json and data_key in target_json:
-                target_json[data_key]["P&ID TAG"] = self.dragged_pid_tag
-                target_json[data_key]["flagSynchronized"] = False
-                print(f"Updated row {data_key} with {self.dragged_pid_tag}")
-    
-                # Update L, N, D fields
-                L, N, D = parse_tag_code(self.dragged_pid_tag)
-                mapping = {}
-                if target_table == self.table_dxf_items_combined:
-                    mapping = header_mapping_reverse
-                data_key_L = mapping.get('L', 'L')
-                data_key_N = mapping.get('N', 'N')
-                data_key_D = mapping.get('D', 'D')
-                target_json[data_key][data_key_L] = str(L)
-                target_json[data_key][data_key_N] = str(N)
-                target_json[data_key][data_key_D] = str(D)
-                
-    
-                self.compare_bom_core()
-                self.updateTableRevBOM()
+                if target_json[data_key]["P&ID TAG"] != self.dragged_pid_tag:
+                    self.register_undo_state(source = target_json, row_id= data_key)
+                    
+                    target_json[data_key]["P&ID TAG"] = self.dragged_pid_tag
+                    target_json[data_key]["flagSynchronized"] = False
+                    print(f"Updated row {data_key} with {self.dragged_pid_tag}")
+        
+                    # Update L, N, D fields
+                    L, N, D = parse_tag_code(self.dragged_pid_tag)
+                    mapping = {}
+                    if target_table == self.table_dxf_items_combined:
+                        mapping = header_mapping_reverse
+                    data_key_L = mapping.get('L', 'L')
+                    data_key_N = mapping.get('N', 'N')
+                    data_key_D = mapping.get('D', 'D')
+                    target_json[data_key][data_key_L] = str(L)
+                    target_json[data_key][data_key_N] = str(N)
+                    target_json[data_key][data_key_D] = str(D)
+                    
+        
+                    self.compare_bom_core()
+                    self.updateTableRevBOM()
     
         # Reset dragging variables
         self.dragged_pid_tag = None
@@ -975,6 +985,44 @@ class BOMExtractorApp(tk.Tk):
         self.updateTableRevBOM()
         # self.save_dxf_windows()
         return None
+
+    def register_undo_state(self, source: dict, row_id: int):
+        """Register a row's previous state before modification.
+        
+        Args:
+            source: "xls" or "dxf"
+            row_id: row index in the BOM dict
+            old_data: full row data snapshot before modification
+        """
+        
+        old_data = source[row_id]
+        #print('register undo: '+str(old_data))
+        source_id= id(source)
+        snapshot = (source_id, row_id, old_data.copy())
+        self.undo_stack.append(snapshot)
+        #print(self.undo_stack)
+        if len(self.undo_stack) > 100:  # Limit size
+            self.undo_stack.pop(0)
+            
+            
+    def undo_last_change(self):
+        if not self.undo_stack:
+            return
+        
+        source_id, row_id, old_data = self.undo_stack.pop()
+        
+        #print('recover undo: '+str(old_data))
+        
+        if source_id == id(self.bom_revisedJSON) and row_id in self.bom_revisedJSON:
+            self.bom_revisedJSON[row_id] = old_data
+            self.bom_revisedJSON[row_id]["flagSynchronized"] = False
+            self.updateTableRevBOM()
+        elif source_id == id(self.bom_dxf) and row_id in self.bom_dxf:
+            self.bom_dxf[row_id] = old_data
+            self.bom_dxf[row_id]["flagSynchronized"] = False
+            self.updateTableDXF()
+            
+        self.compare_bom_core()
 
     
 if __name__ == "__main__":

@@ -408,16 +408,31 @@ class BOMExtractorApp(tk.Tk):
         file_menu.add_command(label="Load settings", command=self.load_settings)
         file_menu.add_command(label="Save settings", command=self.save_settings)
         file_menu.add_separator()
+        
+        load_menu = tk.Menu(file_menu, tearoff=0)
+        load_menu.add_command(label="Upload DXF", command=self.upload_dxf)
+        load_menu.add_command(label="Upload Template Excel", command=self.upload_template)
+        load_menu.add_separator()
+        load_menu.add_command(label="Upload Revised BOM Excel", command=self.upload_revised_bom)
+        file_menu.add_cascade(label="Import", menu=load_menu)
+        
         # Create a "Save" submenu.
         save_menu = tk.Menu(file_menu, tearoff=0)
         
-        save_menu.add_separator()
+        extract_menu = tk.Menu(file_menu, tearoff=0)
+        extract_menu.add_command(label="Extract BOM from DXF", command=self.extract_bom)
+        load_menu.add_separator()
+        extract_menu.add_command(label="Reload BOM Excel", command=self.upload_revised_bom_core)
+        file_menu.add_cascade(label="Load", menu=extract_menu)
+        
+        #save_menu.add_separator()
         save_menu.add_command(label="Save revised XLS BOM", command=self.exportNewExcellFile)
         save_menu.add_separator()
         save_menu.add_command(label="Save updated DXF", command=self.save_dxf_windows)
         
         # Add the Save cascade to the File menu.
         file_menu.add_cascade(label="Save", menu=save_menu)
+        
         
         file_menu.add_separator()
         file_menu.add_command(label="Compare XLS vs DXF (CTRL+Q)", command=self.compare_bom)

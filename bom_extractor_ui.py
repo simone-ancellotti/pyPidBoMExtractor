@@ -56,6 +56,8 @@ class BOMExtractorApp(tk.Tk):
         self.duplicates_XLS = None
 
         self.undo_stack = []  
+        self.last_active_table = None  # track which table was used last
+
         
         self.highlight_missing = tk.BooleanVar(value=True)  # Variable for highlight checkbox
         self.import_missing = tk.BooleanVar(value=True)  # Variable for import missing checkbox
@@ -100,6 +102,8 @@ class BOMExtractorApp(tk.Tk):
         
         self.bind_all("<ButtonRelease-1>", self.on_global_button_release)
         self.bind_all("<Control-q>", self.on_ctrl_q)
+        #self.bind_all("<Control-f>", lambda event: self.zoom_selected_block_in_autocad())
+
 
     def setup_table_tabs(self):
         display_columns = list(header_mapping.values())
@@ -444,7 +448,15 @@ class BOMExtractorApp(tk.Tk):
         
         edit_menu = tk.Menu(menubar, tearoff=0)
         edit_menu.add_command(label="Undo (CTRL+Z)", command=self.undo_last_change)
+        edit_menu.add_command(label="Copy row (CTRL+C)", command=self.copy_row_from_active_table)
+        edit_menu.add_command(label="Paste row (CTRL+V)", command=self.paste_row_to_active_table)
         menubar.add_cascade(label="Edit", menu=edit_menu)
+        
+        view_menu = tk.Menu(menubar, tearoff=0)
+        #view_menu.add_command(label="Zoom to Block in AutoCAD (CTRL+F)", command=None)
+        view_menu.add_command(label="Zoom to Block in AutoCAD (CTRL+F)", command=self.zoom_selected_block_wrapper)
+        menubar.add_cascade(label="View", menu=view_menu)
+
         
         # Create a Help menu.
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -1079,6 +1091,59 @@ class BOMExtractorApp(tk.Tk):
             self.updateTableDXF()
             
         self.compare_bom_core()
+
+    def register_table_focus(self, table_instance):
+        #☻if table_instance:
+        self.last_active_table = table_instance
+
+    def zoom_selected_block_wrapper(self):
+        if self.last_active_table and hasattr(self.last_active_table, "zoom_selected_block_in_autocad"):
+            self.last_active_table.zoom_selected_block_in_autocad()
+        else:
+            messagebox.showinfo("Info", "Select a row in a DXF table before zooming.")
+
+    def copy_row_from_active_table(self):
+        if self.last_active_table and hasattr(self.last_active_table, "on_ctrl_c"):
+            self.last_active_table.on_ctrl_c()
+    
+    def paste_row_to_active_table(self):
+        if self.last_active_table and hasattr(self.last_active_table, "on_ctrl_v"):
+            self.last_active_table.on_ctrl_v()
+
+            
+    # def zoom_selected_block_in_autocad(self):
+    #     # Determine which table has selection focus
+    #     source_table = None
+    #     for table in [self.table_dxf_items_combined, self.table_dxf_items_filterable]:
+    #         if table.has_focus():
+    #             source_table = table
+    #             break
+    
+    #     if not source_table:
+    #         messagebox.showwarning("No Selection", "No table row is currently selected.")
+    #         return
+    
+    #     selected_item = source_table.tree.selection()
+    #     if not selected_item:
+    #         return
+    
+    #     row = source_table.tree.item(selected_item[0])["values"]
+    #     headers = source_table.columns
+    
+    #     try:
+    #         dxf_row_id = row[headers.index("#")]
+    #         dxf_row = source_table.data[dxf_row_id]
+    #         tag_entity = dxf_row.get('tag_entity')
+    #         if tag_entity:
+    #             insert_entity = dxf_row['tag_entity']['entity']
+    #             insert_point = insert_entity.dxf.insert
+        
+    #             x = float(insert_point[0])
+    #             y = float(insert_point[1])
+    #             zoom_in_autocad(x, y)
+    #     except Exception as e:
+    #         messagebox.showerror("Zoom Failed", f"Could not zoom to block: {e}")
+
 
     
 if __name__ == "__main__":

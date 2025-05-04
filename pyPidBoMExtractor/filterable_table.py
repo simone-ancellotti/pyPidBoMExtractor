@@ -6,9 +6,10 @@ Created on Sun Apr 13 16:16:53 2025
 """
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk,messagebox
 from .bom_generator import get_keys_from_pid_tag
 from .utils import parse_tag_code
+from .autocad_interface import zoom_in_autocad_command
 
 class FilterableTable(ttk.Frame):
     def __init__(self, master, data, columns, mapping=None, filter_column_default=None, 
@@ -98,6 +99,9 @@ class FilterableTable(ttk.Frame):
         self.tree.bind("<Control-v>", self.on_ctrl_v)
         
         self.tree.bind("<Double-1>", self._on_double_click)
+        self.tree.bind("<Control-f>", lambda event: self.zoom_selected_block_in_autocad())
+        self.tree.bind("<Button-1>", self._on_table_click)
+
         
         # Vertical scrollbar.
         vsb = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
@@ -268,6 +272,7 @@ class FilterableTable(ttk.Frame):
         self._flash_row(target_iid)
 
 
+
     def _flash_row(self, item_id):
         original_color = self.tree.item(item_id, "tags")
         self.tree.item(item_id, tags=("flash",))
@@ -353,6 +358,45 @@ class FilterableTable(ttk.Frame):
         data_key = self.mapping.get(column_name, column_name)  # actual dict key
         print(f"check value updated {self.data[int(row_iid)][data_key]}")
 
+    def has_focus(self):
+        return self.tree.focus() != ""
+    
+    def _on_table_click(self, event):
+        if hasattr(self.master, 'register_table_focus'):
+            self.master.register_table_focus(self)
+
+
+    def zoom_selected_block_in_autocad(self):
+        selected_item = self.tree.selection()
+        if not selected_item:
+            return
+    
+        row = self.tree.item(selected_item[0])["values"]
+        headers = self.columns
+    
+        try:
+            dxf_row_id = row[headers.index("#")]
+            dxf_row = self.data[dxf_row_id]
+            #print(dxf_row)
+            tag_entity = dxf_row.get('tag_entity')
+            if tag_entity:
+                insert_entity = dxf_row['tag_entity']['entity']
+                insert_point = insert_entity.dxf.insert
+                # xscale = insert_entity.dxf.xscale if hasattr(insert_entity.dxf, "xscale") else 1.0
+                #yscale = insert_entity.dxf.yscale if hasattr(insert_entity.dxf, "yscale") else 1.0
+                #print("Insert:", insert_point)
+                #print("Scale:", insert_entity.dxf.xscale, insert_entity.dxf.yscale)
+                height = 50
+                dimensions = tag_entity.get('dimensions')
+                if dimensions:
+                    if dimensions.get('height'):
+                        height = tag_entity['dimensions']['height']
+                        height = height * 3
+                x = float(insert_point[0])
+                y = float(insert_point[1])
+                zoom_in_autocad_command(x, y, height=height)
+        except Exception as e:
+            messagebox.showerror("Zoom Failed", f"Could not zoom to block: {e}")
 
     def set_data(self, new_data,new_colour_mapping=None):
         """

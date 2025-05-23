@@ -62,6 +62,7 @@ def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf,flagUpdateJSON_dxf=False):
                             update_tag_value_in_block(text_xls, key_dxf, entity_dxf_to_modify)
                             if flagUpdateJSON_dxf:
                                 dxf_item_found[key_dxf] =  text_xls
+                                dxf_item_found["flagSynchronized"]= False
                 else: 
                     rows_xls_no.append(key_xls)
     return rows_xls_no

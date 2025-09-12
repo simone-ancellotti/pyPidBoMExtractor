@@ -613,7 +613,7 @@ class BOMExtractorApp(tk.Tk):
         # Checkbox to select whether to import missing DXF items into Excel (Center)
         self.import_checkbox = tk.Checkbutton(
                                         self.main_tab,
-                                        text="Import DXF items, which are \n missing in revised BOM,\n into new Excel. Highlight in GREY", 
+                                        text="Highlight in GREY the DXF items, which are \n missing in revised BOM, and put into new Excel.", 
                                         variable=self.import_missing,
                                         command=self.updateTableRevBOM
                                         )

@@ -16,11 +16,11 @@ header_mapping = {
         #'CONNECTIONTYPE':'C type'
     }
 
-tags_xls2dxf= {'P&ID TAG':'P&ID TAG','Type':'TYPE', 'C type':'CONNECTIONTYPE', 'Description':'DESCRIPTION',
+tags_xls2dxf= {'P&ID TAG':'P&ID TAG','Type':'TYPE', 'Description':'DESCRIPTION',
                'Fluid':'FLUID', 'Unit':'UNIT', 'Skid':'SKID', 'Type':'TYPE', 
                'Material':'MATERIAL', 'Seal Mat.':'SEAL_MAT', 
                'P     (kW)':'POWER_KW','PN   (bar)':'PN_bar', 
-               'Act NO/NC':'ACT_NO_NC', 'Size':'SIZE','cap. (tanks L)':'CAP.(TANK L)', 
+               'Act NO/NC':'ACT_NO_NC','Connection type':'CONNECTIONTYPE', 'Size':'SIZE', 'cap. (tanks L)':'CAP.(TANK L)', 
                'Q (m3/h)':'Q(m3/h)', 'Supplier':'SUPPLIER', 'Brand':'BRAND',
                'Model':'MODEL', 'Notes':'NOTES', 'Datasheet':'DATASHEET'
                }

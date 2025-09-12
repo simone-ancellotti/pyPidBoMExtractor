@@ -54,3 +54,8 @@ src = r'C:\ASETS-code\python\pyp-id_finder'
 dst = r'G:\My Drive\ULIX tecnico\Varie\Python\pyp-id_finder'
 skip_list=['.git','build']
 copy_folder(src, dst, skip_list)
+
+# for ext in ['dwg','dxf']:
+#     template_dwg_file = os.path.join(src, r'templates\P&ID_simple_template.'+ext)
+#     template_dwg_file_dest = os.path.join(dst, r'templates\P&ID_simple_template.'+ext)
+#     shutil.copy2(template_dwg_file, template_dwg_file_dest)

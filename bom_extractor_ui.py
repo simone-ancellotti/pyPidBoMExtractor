@@ -24,7 +24,7 @@ class BOMExtractorApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("BOM Extractor Application")
-        self.geometry("610x480")  # Adjusted window size for better layout
+        self.geometry("700x480")  # Adjusted window size for better layout
         
         icon_path = r"bom_valve_icon.png"
         if os.path.isfile(icon_path):

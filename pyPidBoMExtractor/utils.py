@@ -151,8 +151,10 @@ def get_block_final_bounding_box(block_def, scale_x=1.0, scale_y=1.0, scale_z=1.
         elif entity.dxftype() == 'TEXT':
             insert_point = entity.dxf.insert
             height = entity.dxf.height
-            width_factor = entity.dxf.get("width_factor", 1.0)
-            text_width = len(entity.text) * height * width_factor
+            width_factor = 1.0
+            if entity.dxf.hasattr("width_factor"):
+                width_factor = entity.dxf.get("width_factor", 1.0)
+            text_width = len(entity.dxf.text) * height * width_factor
             bounding_box.extend([
                 (insert_point.x, insert_point.y, insert_point.z),
                 (insert_point.x + text_width, insert_point.y + height, insert_point.z)
@@ -357,9 +359,12 @@ def getTagCode(block):
         key_TargetObjectTag_lower = key_TargetObjectTag.lower()
         
         # Attempt to fetch both values in a single step, avoiding redundant lookups
-        targetObjectType = attributes_lower.get(key_TargetObjectType_lower)
-        targetObjectLoopNumber = attributes_lower.get(key_TargetObjectLoopNumber_lower)
+        targetObjectType = attributes_lower.get(key_TargetObjectType_lower,'')
+        targetObjectLoopNumber = attributes_lower.get(key_TargetObjectLoopNumber_lower,'')
         targetObjectType2nd = ''
+        
+        tag_complete = targetObjectType + targetObjectLoopNumber
+        targetObjectType, targetObjectLoopNumber, targetObjectType2nd = parse_tag_code(tag_complete)
         
         if targetObjectType=='': targetObjectType = None
         if targetObjectLoopNumber=='': targetObjectLoopNumber = None

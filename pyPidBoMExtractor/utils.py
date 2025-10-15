@@ -11,6 +11,7 @@ listTagBlockNames = ('Tag_block','Ball_Tag','Ball_Tag2',
                      'Tag_Instrument')
 
 
+blocks_ignore_distance = ['ULIX_title_block']
 
 
 def normalize(v):
@@ -224,7 +225,10 @@ def findBlocksNearBlock(block,components ):
     i=-1
     for component in components:
         i+=1
-        if block['block_def'] != component['block_def']:
+        flagIsToIgnore = component['block_name'] in blocks_ignore_distance
+        # if flagIsToIgnore:
+        #     print(component['block_name'])
+        if block['block_def'] != component['block_def'] and not(flagIsToIgnore):
             # positionComponent1 = np.array(component['insert_point'])
             positionComponent1 = component['insert_point']
             mainDim1 = getCaracteristicDimensionBlock(component)

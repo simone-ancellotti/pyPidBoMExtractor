@@ -20,13 +20,22 @@ tags_xls2dxf= {'P&ID TAG':'P&ID TAG','Type':'TYPE', 'Description':'DESCRIPTION',
                'Fluid':'FLUID', 'Unit':'UNIT', 'Skid':'SKID', 'Type':'TYPE', 
                'Material':'MATERIAL', 'Seal Mat.':'SEAL_MAT', 
                'P     (kW)':'POWER_KW','PN   (bar)':'PN_bar', 
-               'Act NO/NC':'ACT_NO_NC','Connection type':'CONNECTIONTYPE', 'Size':'SIZE', 'cap. (tanks L)':'CAP.(TANK L)', 
-               'Q (m3/h)':'Q(m3/h)', 'Supplier':'SUPPLIER', 'Brand':'BRAND',
-               'Model':'MODEL', 'Notes':'NOTES', 'Datasheet':'DATASHEET'
+               'Act NO/NC':'ACT_NO_NC','C type':'CONNECTIONTYPE', 
+               'Size':'SIZE', 'cap. (tanks L)':'CAP.(TANK L)', 
+               'Q (m3/h)':'Q(m3/h)', 'ATEX':'ATEX',
+               'Supplier':'SUPPLIER', 'Brand':'BRAND',
+               'Model':'MODEL', 'Notes':'NOTES', 'Datasheet':'DATASHEET',
+               'OFFER REQUEST':'OFFER_REQUEST','OFFER RECEIVED':'OFFER_RECEIVED',
+               'ORDER':'ORDER','PRICE':'PRICE',	'PAID':'PAID',	'ARRIVED':'ARRIVED',
+               'ULIX Ref.':'ULIX_REF.'
                }
+# 
+#	
+
 tags_dxf2xls = {value: key for key, value in tags_xls2dxf.items()}
 header_mapping.update(tags_dxf2xls)
 header_mapping_reverse = {value: key for key, value in header_mapping.items()}
+
 
 
 def filterBOM_Ignore(bom,tagToIgnore,valuesToIgnore):

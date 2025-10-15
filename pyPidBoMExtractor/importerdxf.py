@@ -78,7 +78,7 @@ def update_dxfJSON_into_dxf_drawing(bom_dxf):
                 
             if entity_dxf_to_modify:
                 for key_dxf in tags_dxf2xls.keys():
-                    print(key_dxf)
+                    #print(key_dxf)
                     if key_dxf != 'P&ID TAG':
                         text_dxf_updated = str(dxf_item.get(key_dxf))
                         text_dxf_updated = text_dxf_updated.strip()

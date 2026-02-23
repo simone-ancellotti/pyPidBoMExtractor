@@ -16,18 +16,34 @@ header_mapping = {
         #'CONNECTIONTYPE':'C type'
     }
 
-tags_xls2dxf= {'P&ID TAG':'P&ID TAG','Type':'TYPE', 'Description':'DESCRIPTION',
-               'Fluid':'FLUID', 'Unit':'UNIT', 'Skid':'SKID', 'Type':'TYPE', 
-               'Material':'MATERIAL', 'Seal Mat.':'SEAL_MAT', 
-               'P     (kW)':'POWER_KW','PN   (bar)':'PN_bar', 
-               'Act NO/NC':'ACT_NO_NC','C type':'CONNECTIONTYPE', 
-               'Size':'SIZE', 'cap. (tanks L)':'CAP.(TANK L)', 
-               'Q (m3/h)':'Q(m3/h)', 'ATEX':'ATEX',
-               'Supplier':'SUPPLIER', 'Brand':'BRAND',
-               'Model':'MODEL', 'Notes':'NOTES', 'Datasheet':'DATASHEET',
-               'OFFER REQUEST':'OFFER_REQUEST','OFFER RECEIVED':'OFFER_RECEIVED',
-               'ORDER':'ORDER','PRICE':'PRICE',	'PAID':'PAID',	'ARRIVED':'ARRIVED',
-               'ULIX Ref.':'ULIX_REF.'
+tags_xls2dxf= {'P&ID TAG':'P&ID TAG',
+               #'Type':'TYPE',
+               'Description':'DESCRIPTION',
+               'Fluid':'FLUID', 
+               'Unit':'UNIT', 
+               #'Skid':'SKID',  
+               'Material':'MATERIAL',
+               'Seal Mat.':'SEAL_MAT', 
+               #'P     (kW)':'POWER_KW',
+               'PN   (bar)':'PN_bar', 
+               #'Act NO/NC':'ACT_NO_NC',
+               #'C type':'CONNECTIONTYPE', 
+               'Size':'SIZE',
+               #'cap. (tanks L)':'CAP.(TANK L)', 
+               #'Q (m3/h)':'Q(m3/h)',
+               'ATEX':'ATEX',
+               'Supplier':'SUPPLIER',
+               'Brand':'BRAND',
+               'Model':'MODEL',
+               'Notes':'NOTES',
+               #'Datasheet':'DATASHEET',
+               'OFFER REQUEST':'OFFER_REQUEST',
+               'OFFER RECEIVED':'OFFER_RECEIVED',
+               'ORDER':'ORDER',
+               'PAID':'PAID',
+               'ARRIVED':'ARRIVED',
+               'PRICE':'PRICE',	
+               #'ULIX Ref.':'ULIX_REF.'
                }
 # 
 #	

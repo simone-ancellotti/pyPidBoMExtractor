@@ -301,13 +301,13 @@ def load_bom_from_excel_to_JSON(file_path):
         row_data = {headers[j]: (row[j] if row[j] is not None else '') for j in range(len(headers))}
         
         # Convert 'N' to string after replacing NaN (or empty) values with 0
-        row_data['N'] = str(row_data['N']) if row_data['N'] != '' else ''
+        # row_data['N'] = str(row_data['N']) if row_data['N'] != '' else ''
         
         # Convert 'D' to an empty string if NaN or None
-        row_data['D'] = str(row_data['D']) if row_data['D'] != '' else ''
+        # row_data['D'] = str(row_data['D']) if row_data['D'] != '' else ''
         
         # Construct P&ID TAG by concatenating L, N, and D
-        row_data['P&ID TAG'] = str(row_data['L']) + row_data['N'] + row_data['D']
+        #row_data['P&ID TAG'] = str(row_data['L']) + row_data['N'] + row_data['D']
         
         # Add the row's data to the bom_data dictionary with the row number as the key
         bom_data[i] = row_data
@@ -529,11 +529,12 @@ def make_color_mapping(colour_mapping ,list_tag,color):
         return {}
     
     
-# Filter bom_dxf and bom_revised to include only entries with 'L', 'N', 'D', 'P&ID TAG' present and not empty
+# Filter bom_dxf and bom_revised to include only entries with P&ID TAG' present and not empty
 def filter_bom(bom):
     filtered_bom = {}
     for key, comp in bom.items():
-        if all(comp.get(field) not in [None, ''] for field in ['L', 'N', 'P&ID TAG']):
+        # if all(comp.get(field) not in [None, ''] for field in ['L', 'N', 'P&ID TAG']):
+        if all(comp.get(field) not in [None, ''] for field in ['P&ID TAG']):
             filtered_bom[key] = comp
     return filtered_bom
 

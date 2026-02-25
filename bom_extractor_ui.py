@@ -16,6 +16,10 @@ from pyPidBoMExtractor._version import __version__
 
 # pyinstaller --onefile --noconsole --strip --exclude-module=numpy bom_extractor_ui.py
 
+display_columns = list(header_mapping.values())
+display_columns.remove('L')
+display_columns.remove('N')
+display_columns.remove('D')
 
 # Configure logging to display in terminal
 logging.basicConfig(level=logging.INFO)
@@ -106,7 +110,6 @@ class BOMExtractorApp(tk.Tk):
 
 
     def setup_table_tabs(self):
-        display_columns = list(header_mapping.values())
         self.table_dxf_items_filterable = FilterableTable(
             master=self.table_dxf_tab,
             data=self.bom_dxf_JSON_like_xls or {},   # Initially empty or loaded data.
@@ -121,7 +124,6 @@ class BOMExtractorApp(tk.Tk):
         )
         self.table_dxf_items_filterable.pack(fill="both", expand=True)
         
-        display_columns = list(header_mapping.values())
         # In your setup method (e.g., setup_table_tab for the DXF tab):
         self.table_rev_tab_filterable = FilterableTable(
             master=self.table_rev_tab,

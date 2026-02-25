@@ -309,6 +309,7 @@ def load_bom_from_excel_to_JSON(file_path):
         # Construct P&ID TAG by concatenating L, N, and D
         #row_data['P&ID TAG'] = str(row_data['L']) + row_data['N'] + row_data['D']
         
+        row_data['P&ID TAG'] = row_data['P&ID TAG'].strip()
         # Add the row's data to the bom_data dictionary with the row number as the key
         bom_data[i] = row_data
     

@@ -6,7 +6,7 @@ Created on Fri Apr 11 13:00:01 2025
 """
 
 import ezdxf
-from .utils import update_tag_value_in_block,getTagCode,parse_tag_code
+from .utils import update_tag_value_in_block,getTagCode,parse_tag_code,del_attrib_from_tag,del_attribDXF_not_in_EXL
 from .bom_generator import tags_xls2dxf,tags_dxf2xls
 
 key_TargetObjectType = '#(TargetObject.Type)'
@@ -63,6 +63,7 @@ def import_BOMjson_into_DXF(bom_revisedJSON,bom_dxf,flagUpdateJSON_dxf=False):
                             if flagUpdateJSON_dxf:
                                 dxf_item_found[key_dxf] =  text_xls
                                 dxf_item_found["flagSynchronized"]= False
+                        del_attribDXF_not_in_EXL(entity_dxf_to_modify,tags_dxf2xls.keys())
                 else: 
                     rows_xls_no.append(key_xls)
     return rows_xls_no

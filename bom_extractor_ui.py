@@ -21,6 +21,7 @@ display_columns.remove('L')
 display_columns.remove('N')
 display_columns.remove('D')
 
+
 # Configure logging to display in terminal
 logging.basicConfig(level=logging.INFO)
 # Main application class

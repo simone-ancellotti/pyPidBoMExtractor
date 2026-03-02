@@ -442,7 +442,50 @@ def get_attrib_from_tag(tag, block):
             return attrib
     return None
 
-
+def del_attrib_from_tag(tag, block):
+    attrib = get_attrib_from_tag(tag, block)
+    if attrib:
+        attrib
+    else:
+        return -1
+def del_attribDXF_not_in_EXL(block,tags_to_keep):
+    
+    """
+    Delete (ATTDEF/ATTRIB) in DXF file from a block that are not in the list tags_to_keep.
+    
+    Args:
+        tags_to_keep (str list): list of tags to keep in dxf.
+        block (ezdxf.entities.insert.Insert): The DXF block instance to update.
+        
+    Returns:
+        
+        
+    Raises:
+        
+    """
+    # Determine how to obtain the attributes based on block type
+    if isinstance(block, ezdxf.entities.insert.Insert):
+        # For Insert type blocks, use the 'attribs' attribute (already iterable)
+        list_of_attribs = block.attribs
+    elif isinstance(block, ezdxf.layouts.blocklayout.BlockLayout):
+        # For BlockLayout blocks, use the 'attdefs()' method.
+        list_of_attribs = block.attdefs()
+    else:
+        raise ValueError(f"Unsupported block type: {type(block)}")
+    
+    # dxf_attrb_tag = {attrib.dxf.tag for attrib in list_of_attribs}
+    # print(dxf_attrb_tag-set(tags_to_keep))
+    
+    # key_TargetObjectType = '#(TargetObject.Type)'
+    # key_TargetObjectLoopNumber = '#(TargetObject.LoopNumber)'
+    # key_TargetObjectTag = '#(TargetObject.Tag)'
+    for attrib in list_of_attribs:
+        if not(attrib.dxf.tag in tags_to_keep) and not(attrib.dxf.tag.find('#(')==0):
+            #print(attrib.dxf.tag)
+            block.delete_attrib(attrib.dxf.tag)
+    
+    
+    
 
 def add_new_tag_to_insert(tag, text='', insert_block=None):
     """

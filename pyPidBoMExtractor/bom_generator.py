@@ -1,4 +1,4 @@
-from .utils import isTagBlock, getTagCode, findTypeBlockFromTag
+from .utils import isTagBlock, getTagCode, findTypeBlockFromTag,parse_tag_code
 from .extractor import extract_blocks_with_attributes_and_dimensions
 import openpyxl
 from openpyxl.styles import PatternFill
@@ -310,6 +310,11 @@ def load_bom_from_excel_to_JSON(file_path):
         #row_data['P&ID TAG'] = str(row_data['L']) + row_data['N'] + row_data['D']
         
         row_data['P&ID TAG'] = row_data['P&ID TAG'].strip()
+        
+        L,N,D = parse_tag_code(row_data['P&ID TAG'])
+        row_data['L'] = str(L)
+        row_data['N'] = str(N)
+        row_data['D'] = str(D)
         # Add the row's data to the bom_data dictionary with the row number as the key
         bom_data[i] = row_data
     

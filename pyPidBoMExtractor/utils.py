@@ -275,8 +275,9 @@ def getTypeFromBlock(block):
     typeTag = None
     if 'TYPE' in attributes.keys():
         typeTag = attributes['TYPE']
-    # else: 
-    #     typeTag = attributes.get('DESCRIPTION')
+        typeTag = typeTag.strip()
+    if typeTag==None or typeTag=='':
+        typeTag = attributes.get('DESCRIPTION')
     return typeTag
 
 def findTypeBlockFromTag(block,components):

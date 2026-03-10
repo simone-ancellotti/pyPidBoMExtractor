@@ -20,7 +20,7 @@ display_columns = list(header_mapping.values())
 display_columns.remove('L')
 display_columns.remove('N')
 display_columns.remove('D')
-
+display_columns.remove('Type')
 
 # Configure logging to display in terminal
 logging.basicConfig(level=logging.INFO)

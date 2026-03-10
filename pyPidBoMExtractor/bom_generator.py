@@ -17,7 +17,7 @@ header_mapping = {
     }
 
 tags_xls2dxf= {'P&ID TAG':'P&ID TAG',
-               #'Type':'TYPE',
+               'Type':'TYPE',
                'Description':'DESCRIPTION',
                'Fluid':'FLUID', 
                'Unit':'UNIT', 

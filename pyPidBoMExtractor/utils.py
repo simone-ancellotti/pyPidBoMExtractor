@@ -385,6 +385,7 @@ def getTagCode(block):
         else:
             # Try to find the tag instead
             targetObjectTag = attributes_lower.get(key_TargetObjectTag_lower)
+            targetObjectTag = targetObjectTag.replace(" ","")
             if targetObjectTag:
                 # Parse the tag to get type and loop number
                 # if 'G' == targetObjectTag:
